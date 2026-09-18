@@ -75,21 +75,55 @@ Show: app icon + GitHub repo URL text on screen
 
 ---
 
+## Pre-flight checklist (do this BEFORE you hit record)
+
+Do all of this once, up front — it's what separates a smooth take from five
+retakes.
+
+1. **App state:** the app is already installed and running on the emulator,
+   the medicine database has finished loading (open it once and confirm the
+   home screen shows the search bar, not "Loading medicine database..."),
+   and camera permission is already granted (the emulator's back camera is
+   wired to your webcam — you've been given a "Grant Camera Access" prompt
+   once already; if you see it again mid-recording, that means the app was
+   reinstalled since — tell me and I'll re-grant it before you record).
+2. **Physical strip ready:** have a real medicine strip within arm's reach
+   for the scan segment — any strip with a printed name works (an empty
+   Crocin/Dolo/Paracetamol strip is fine). Since the emulator's camera is
+   now your **webcam**, you'll hold the strip up to your actual webcam, not
+   the phone screen.
+3. **Audio check:** record 5 seconds of you talking, play it back. If it's
+   quiet, echoey, or picking up fan/AC noise, move closer to the mic or
+   switch to headphones-with-mic. Judges forgive so-so visuals; they do not
+   forgive audio they can't understand.
+4. **Lighting:** make sure the room isn't backlit (window behind you) if
+   your face appears at all — put light in front of you, not behind.
+5. **Quiet room:** close other apps/notifications on this machine so nothing
+   pings or pops up mid-recording (Slack, email, etc.) — you'll be
+   recording the full screen area, not just the emulator window, unless you
+   crop the recording to just the emulator.
+6. **Do a full dry run once, unrecorded** — read every line out loud while
+   tapping through the app, stopwatch it. If you're way over ~1:50, decide
+   now what to trim (the safest cut is shortening pauses between taps, not
+   cutting a whole segment).
+7. **Know your stop condition:** decide before you start that a small
+   stumble is NOT a reason to restart — only restart on a real mistake
+   (wrong screen, app crash, long silence). Judges care about clarity, not
+   a flawless take.
+
 ## Brain-dead recording instructions
 
-1. **Before you start:** have a real medicine strip nearby for the scan
-   part (any strip with a name printed on it works — even an empty
-   Crocin/Dolo strip).
-2. Make sure the emulator (or your phone with the dev build installed) is
-   already running and the app is open to the home screen.
-3. Open a screen recorder:
+1. Make sure the emulator (or your phone with the dev build installed) is
+   already running and the app is open to the home screen (see pre-flight
+   checklist above).
+2. Open a screen recorder:
    - **On the emulator:** in Android Studio, click the **⋮** (three dots) in
      the emulator toolbar → **Record and Playback** → **Start Recording**.
    - **On a real phone:** swipe down twice from the top → tap **Screen
      Record** → **Start**.
 4. Read the hook line out loud (or type it as on-screen text if you'd
    rather not talk) while the app icon is showing.
-5. Follow the steps above in order: Search → Augmentin → tap result → wait
+5. Follow the steps above in order: Search → Dolo 650 → tap result → wait
    → Safety (Thyronorm) → Scan → Cabinet/paywall → Close.
 6. Speak each italicized line as you perform the matching step — don't
    worry about being perfectly smooth, judges care about clarity, not
@@ -108,3 +142,19 @@ Show: app icon + GitHub repo URL text on screen
    - Click **Publish**, copy the link.
 10. Paste that YouTube link into the Devpost submission form's video field,
     and into the "Try it out" section alongside the GitHub repo link.
+
+## If something goes wrong mid-recording
+
+- **Don't stop and restart from zero for a small stumble** — pause, take a
+  breath, keep going. You can trim mid-video silences in the editor if
+  needed; a full restart costs more time than it saves.
+- **App shows "Something went wrong" with a Reload button:** tap Reload,
+  it'll recover in a couple seconds — keep that bit out of the final cut.
+- **Camera looks black/frozen on the Scan screen:** back out to Home and
+  back into Scan once; if it's still black, tell me immediately, don't
+  keep recording around it.
+- **Scan takes a while or fails once:** it auto-retries — just wait, or
+  tap capture again once.
+- Send me the raw clip or describe what happened if anything looks broken
+  on playback — I can usually tell you in one message whether it's safe to
+  ignore or worth a quick re-shoot of just that segment.
