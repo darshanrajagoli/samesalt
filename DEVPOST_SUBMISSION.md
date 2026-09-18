@@ -27,8 +27,8 @@ index drugs (Warfarin, Digoxin, Lithium, etc.) — where switching brands can be
 medically dangerous — SameSalt refuses to suggest alternatives at all and tells
 the user to consult their doctor.
 
-The free tier is unlimited for a single person. SameSalt Family (₹99/month or
-₹799/year with a 7-day trial), powered end-to-end by RevenueCat, unlocks up to
+The free tier is unlimited for a single person. SameSalt Family ($9.99/month or
+$79.99/year with a 7-day trial), powered end-to-end by RevenueCat, unlocks up to
 6 family profiles, refill reminders, and a monthly savings summary — the
 paywall only appears when you actually try to add a second person, never on
 launch.

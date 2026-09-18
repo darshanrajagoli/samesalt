@@ -109,8 +109,8 @@ Mismatches that are correctly rejected:
 - Gates: multiple profiles, refill reminders, monthly savings summary
 
 ### Offerings: `default`
-- `$rc_monthly` → ₹99/month
-- `$rc_annual` → ₹799/year (7-day free trial)
+- `$rc_monthly` → $9.99/month (Test Store demo pricing)
+- `$rc_annual` → $79.99/year (7-day free trial)
 
 ### Paywall trigger
 The paywall appears ONLY when:

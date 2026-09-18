@@ -23,7 +23,7 @@ Record with the emulator/phone screen + your voice. Total target: ~1:45.
 > "Search any brand name — SameSalt finds every medicine with the exact
 > same salt, strength, and dosage form, sorted by real price per tablet.
 > Dolo 650 costs about ₹2.28 a tablet — the same paracetamol 650mg from
-> another manufacturer costs ₹0.33 a tablet. Same drug, 85% cheaper."
+> another manufacturer costs ₹0.33 a tablet. Same drug, 86% cheaper."
 
 ---
 
@@ -53,9 +53,9 @@ Record with the emulator/phone screen + your voice. Total target: ~1:45.
 
 **[1:15–1:35] RevenueCat / Family paywall (screen recording)**
 
-1. Go to the **Cabinet** tab, try to add a second family profile.
-2. Show the paywall appearing (Family plan, ₹99/month or ₹799/year with
-   7-day trial).
+1. Go to the **Cabinet** tab, tap the add-person icon top right.
+2. Show the paywall appearing (Family plan, $9.99/month or $79.99/year
+   with a 7-day free trial, Annual pre-selected as Best Value).
 
 > "SameSalt is free forever for one person. Add a second family member,
 > and that's where SameSalt Family comes in — powered end-to-end by

@@ -48,7 +48,7 @@ A photo goes to a vision model (via OpenRouter) through a Cloudflare Worker prox
 - 👨‍👩‍👧‍👦 Up to 6 family profiles
 - ⏰ Refill reminders via local notifications
 - 📈 Monthly savings summary
-- **₹99/month** or **₹799/year** (7-day free trial on annual, annual pre-selected)
+- **$9.99/month** or **$79.99/year** (7-day free trial on annual, annual pre-selected) — priced in USD on the RevenueCat Test Store used for this build; swap in real INR pricing before a production release
 
 The paywall appears only when you try to add a second person — never on app launch.
 
@@ -132,7 +132,7 @@ npx expo run:android  # or run:ios
 
 1. Create a project at [app.revenuecat.com](https://app.revenuecat.com)
 2. Create a single entitlement: `family`
-3. Create two packages in a "default" offering: `monthly` (₹99) and `annual` (₹799, 7-day trial)
+3. Create two packages in a "default" offering: `monthly` and `annual` (7-day trial) — priced however you like
 4. Add your RevenueCat API key to `src/constants/config.ts`
 5. For demo purposes, use RevenueCat **Test Store** (no Apple/Google developer account needed)
 
