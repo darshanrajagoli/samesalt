@@ -50,7 +50,10 @@ launch.
   This keeps the API key server-side — it never ships inside the app bundle.
 - **RevenueCat**: entitlements, offerings, packages, purchase flow, and
   paywall gating — using anonymous device IDs, so there's no login or
-  account system anywhere in the app.
+  account system anywhere in the app. The paywall route tries RevenueCat's
+  native Paywalls SDK (`react-native-purchases-ui`) first and falls back to
+  a hand-built screen if no visual template is configured, so it works
+  either way.
 - **expo-sqlite** for all local medicine lookups (fully offline, no server
   round-trip for search), **AsyncStorage** for the personal medicine cabinet
   and family profiles, and **expo-notifications** for refill reminders.

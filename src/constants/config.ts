@@ -22,11 +22,8 @@ export const Config = {
   REVENUECAT_API_KEY_APPLE: 'test_HwLgSuwFareISTJMRnvZgUSnSJc',
   REVENUECAT_API_KEY_GOOGLE: 'test_HwLgSuwFareISTJMRnvZgUSnSJc',
 
-  // RevenueCat entitlement and offering IDs
+  // RevenueCat entitlement ID that gates the Family plan.
   ENTITLEMENT_FAMILY: 'family',
-  OFFERING_DEFAULT: 'default',
-  PACKAGE_MONTHLY: '$rc_monthly',
-  PACKAGE_ANNUAL: '$rc_annual',
 
   // Database
   DB_NAME: 'samesalt.db',
@@ -35,7 +32,4 @@ export const Config = {
 
   // Family plan limits
   MAX_FAMILY_PROFILES: 6,
-
-  // Default monthly consumption estimate (tablets per month)
-  DEFAULT_MONTHLY_TABLETS: 30,
 } as const;
