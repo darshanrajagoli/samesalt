@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -36,11 +37,18 @@ export function PaywallScreen() {
     const pkg = packages[selectedIdx];
     if (!pkg) return;
     setLoading(true);
-    const success = await purchasePackage(pkg);
+    const result = await purchasePackage(pkg);
     setLoading(false);
-    if (success) {
+    if (result === 'success') {
       router.back();
+    } else if (result === 'error') {
+      Alert.alert(
+        'Purchase Not Completed',
+        "We couldn't complete that purchase. Please check your connection and try again."
+      );
     }
+    // 'cancelled' — the user backed out of the native purchase sheet; no
+    // alert needed, they know what they just did.
   };
 
   const handleRestore = async () => {
@@ -49,6 +57,11 @@ export function PaywallScreen() {
     setLoading(false);
     if (restored) {
       router.back();
+    } else {
+      Alert.alert(
+        'Nothing to Restore',
+        "We couldn't find an active SameSalt Family subscription for this device."
+      );
     }
   };
 

@@ -48,12 +48,12 @@ launch.
 - **Scan feature**: a photo is sent to a Cloudflare Worker, which proxies the
   request to a vision-language model via OpenRouter (Google Gemini Flash).
   This keeps the API key server-side — it never ships inside the app bundle.
-- **RevenueCat**: entitlements, offerings, packages, purchase flow, and
-  paywall gating — using anonymous device IDs, so there's no login or
-  account system anywhere in the app. The paywall route tries RevenueCat's
-  native Paywalls SDK (`react-native-purchases-ui`) first and falls back to
-  a hand-built screen if no visual template is configured, so it works
-  either way.
+- **RevenueCat**: entitlements, offerings, packages, purchase flow, restore,
+  and paywall gating — using anonymous device IDs, so there's no login or
+  account system anywhere in the app. The paywall itself is a hand-built
+  screen (so it can show a dynamic "you've already saved ₹X/month" callout
+  and the actual family features) that calls RevenueCat's core purchase
+  APIs directly for the transaction and entitlement check.
 - **expo-sqlite** for all local medicine lookups (fully offline, no server
   round-trip for search), **AsyncStorage** for the personal medicine cabinet
   and family profiles, and **expo-notifications** for refill reminders.

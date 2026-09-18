@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0F766E"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.samesalt.app",
@@ -27,7 +29,9 @@
         "backgroundColor": "#0F766E"
       },
       "package": "com.samesalt.app",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -44,6 +48,14 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#0F766E"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.24"
+          }
         }
       ]
     ]

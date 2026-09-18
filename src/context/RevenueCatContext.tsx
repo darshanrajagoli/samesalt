@@ -21,7 +21,7 @@ interface RevenueCatContextType {
   currentOffering: PurchasesOffering | null;
   packages: PurchasesPackage[];
 
-  purchasePackage: (pkg: PurchasesPackage) => Promise<boolean>;
+  purchasePackage: (pkg: PurchasesPackage) => Promise<'success' | 'cancelled' | 'error'>;
   restorePurchases: () => Promise<boolean>;
   refresh: () => Promise<void>;
 }
@@ -85,18 +85,20 @@ export function RevenueCatProvider({
   }
 
   const purchasePackage = useCallback(
-    async (pkg: PurchasesPackage): Promise<boolean> => {
+    async (pkg: PurchasesPackage): Promise<'success' | 'cancelled' | 'error'> => {
       try {
         const { customerInfo: newInfo } = await Purchases.purchasePackage(pkg);
         updateFromCustomerInfo(newInfo);
-        return (
-          newInfo.entitlements.active[Config.ENTITLEMENT_FAMILY] !== undefined
-        );
+        return newInfo.entitlements.active[Config.ENTITLEMENT_FAMILY] !==
+          undefined
+          ? 'success'
+          : 'error';
       } catch (err: any) {
-        if (!err.userCancelled) {
-          console.error('Purchase error:', err);
+        if (err.userCancelled) {
+          return 'cancelled';
         }
-        return false;
+        console.error('Purchase error:', err);
+        return 'error';
       }
     },
     []
