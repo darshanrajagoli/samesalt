@@ -12,7 +12,7 @@ SameSalt is a React Native (Expo) app built for India. It uses a local database 
 
 1. **Scan or Search** — Point your camera at a medicine strip, or type the brand name
 2. **Match** — The app extracts the salt composition and finds every brand with the same formula
-3. **Save** — See Jan Aushadhi generics first, then the cheapest brands, with savings per tablet and per month
+3. **Save** — See the cheapest verified brands first, with savings per tablet and per month. Genuine government Jan Aushadhi (PMBJP) listings are highlighted at the top when present in the data — the current Kaggle dataset doesn't contain any, so this only activates once such data is added.
 
 ### The Database Pipeline
 
@@ -39,7 +39,7 @@ A photo goes to a vision model (via OpenRouter) through a Cloudflare Worker prox
 - 📷 Camera scan (AI-powered OCR)
 - 🔍 Manual text search
 - 💊 Salt-equivalent matching
-- 🏥 Jan Aushadhi generic highlighting
+- 🏥 Jan Aushadhi (government PMBJP) generic highlighting, when present in the dataset
 - 📊 Savings per tablet & per month
 - 📱 Pharmacist card (full-screen salt + strength for the chemist)
 - 🗄️ Personal medicine cabinet with cumulative savings
@@ -64,7 +64,7 @@ The paywall appears only when you try to add a second person — never on app la
 | Notifications | expo-notifications |
 | State | React Context |
 | Scan Proxy | Cloudflare Worker |
-| Vision AI | OpenRouter (google/gemini-flash-1.5) |
+| Vision AI | OpenRouter (google/gemini-2.5-flash) |
 | Pipeline | Python 3.10+ |
 
 ## Project Structure
@@ -83,7 +83,6 @@ samesalt/
 ├── src/                # App source code
 │   ├── constants/      # Colors, config, NTI list
 │   ├── context/        # React contexts
-│   ├── hooks/          # Custom hooks
 │   ├── screens/        # Screen components (used by router)
 │   ├── components/     # Shared UI components
 │   └── utils/          # Database, scan, formatting helpers
@@ -110,6 +109,8 @@ cd worker
 npm install
 # Set your OpenRouter API key:
 npx wrangler secret put OPENROUTER_API_KEY
+# Set a shared secret the app will send on every request (pick any random string):
+npx wrangler secret put APP_SHARED_SECRET
 npx wrangler deploy
 # Note the worker URL for the next step
 ```
@@ -119,7 +120,8 @@ npx wrangler deploy
 ```bash
 # From the project root (samesalt/)
 npm install
-# Set the worker URL in src/constants/config.ts
+# Set SCAN_WORKER_URL and SCAN_WORKER_SECRET (matching the worker secret above)
+# in src/constants/config.ts
 npx expo prebuild
 npx expo run:android  # or run:ios
 ```
@@ -144,8 +146,10 @@ SameSalt is an **informational tool only**. It is not medical advice. For Narrow
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+App source code is MIT — see [LICENSE](LICENSE). The bundled database
+(`assets/samesalt.db`) is derived from a CC BY-SA 4.0 dataset — see
+[DATA_LICENSE.md](DATA_LICENSE.md).
 
 ## Hackathon
 
-Built for [RevenueCat Shipaton 2026](https://revenuecat.devpost.com/) — targeting the **Next Gen Award** (student-only).
+Built for [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/) — targeting the **Next Gen Award** (student-only).

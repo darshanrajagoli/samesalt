@@ -20,7 +20,10 @@ export async function scanMedicineStrip(
 ): Promise<ScanResult> {
   const response = await fetch(`${Config.SCAN_WORKER_URL}/scan`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-App-Secret': Config.SCAN_WORKER_SECRET,
+    },
     body: JSON.stringify({ image: base64Image }),
   });
 

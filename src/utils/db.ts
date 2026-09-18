@@ -18,6 +18,7 @@ export interface Medicine {
   release_type: string | null;
   is_nti: boolean;
   is_jan_aushadhi: boolean;
+  composition_incomplete: boolean;
 }
 
 export interface SearchResult {
@@ -106,6 +107,8 @@ export async function searchBySalt(
  * Find all medicines with the same canonical key (same salt composition).
  * Returns them sorted: Jan Aushadhi first, then by per-unit price ascending.
  */
+const MAX_ALTERNATIVES = 50;
+
 export async function findAlternatives(
   canonicalKey: string
 ): Promise<Medicine[]> {
@@ -115,14 +118,29 @@ export async function findAlternatives(
   const results = await database.getAllAsync<Medicine>(
     `SELECT * FROM medicines
      WHERE canonical_key = ?
+       AND composition_incomplete = 0
      ORDER BY
        is_jan_aushadhi DESC,
        per_unit_price ASC NULLS LAST,
        name ASC
+     LIMIT ?
     `,
-    [canonicalKey]
+    [canonicalKey, MAX_ALTERNATIVES]
   );
   return results.map(normalizeMedicine);
+}
+
+/**
+ * Total count of medicines sharing a canonical key (for "showing N of TOTAL").
+ */
+export async function countAlternatives(canonicalKey: string): Promise<number> {
+  if (!canonicalKey) return 0;
+  const database = await openDatabase();
+  const row = await database.getFirstAsync<{ c: number }>(
+    `SELECT COUNT(*) as c FROM medicines WHERE canonical_key = ? AND composition_incomplete = 0`,
+    [canonicalKey]
+  );
+  return row?.c ?? 0;
 }
 
 /**
@@ -203,5 +221,7 @@ function normalizeMedicine(row: any): Medicine {
     ...row,
     is_nti: row.is_nti === 1 || row.is_nti === true,
     is_jan_aushadhi: row.is_jan_aushadhi === 1 || row.is_jan_aushadhi === true,
+    composition_incomplete:
+      row.composition_incomplete === 1 || row.composition_incomplete === true,
   };
 }

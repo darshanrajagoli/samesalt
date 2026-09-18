@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -29,25 +29,49 @@ export default function HomeScreen() {
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestSeq = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const runSearch = useCallback(async (text: string) => {
+    const mySeq = ++requestSeq.current;
+    setSearching(true);
+    try {
+      const hits = await searchByName(text.trim());
+      // A newer keystroke may have started a query that resolved first —
+      // ignore this response if it's no longer the latest one in flight.
+      if (mySeq !== requestSeq.current) return;
+      setResults(hits);
+      setHasSearched(true);
+    } catch (err) {
+      console.error('Search error:', err);
+    }
+    if (mySeq === requestSeq.current) setSearching(false);
+  }, []);
+
   const handleSearch = useCallback(
-    async (text: string) => {
+    (text: string) => {
       setQuery(text);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
       if (text.trim().length < 2) {
+        requestSeq.current++; // invalidate any in-flight search
         setResults([]);
         setHasSearched(false);
+        setSearching(false);
         return;
       }
-      setSearching(true);
-      try {
-        const hits = await searchByName(text.trim());
-        setResults(hits);
-        setHasSearched(true);
-      } catch (err) {
-        console.error('Search error:', err);
-      }
-      setSearching(false);
+
+      debounceRef.current = setTimeout(() => {
+        runSearch(text);
+      }, 250);
     },
-    []
+    [runSearch]
   );
 
   const handleSelectMedicine = useCallback(

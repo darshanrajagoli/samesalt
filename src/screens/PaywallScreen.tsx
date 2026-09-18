@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -20,12 +20,17 @@ export function PaywallScreen() {
   const { packages, purchasePackage, restorePurchases } = useRevenueCat();
   const { totalSavings } = useCabinet();
   const [loading, setLoading] = useState(false);
-  const [selectedIdx, setSelectedIdx] = useState(
-    // Pre-select annual
-    packages.findIndex((p) => p.packageType === 'ANNUAL') >= 0
-      ? packages.findIndex((p) => p.packageType === 'ANNUAL')
-      : 0
-  );
+  // `packages` can arrive after this component mounts (offerings fetched
+  // async), so this can't be a useState initializer — it needs to react
+  // once the real list shows up, or the annual pre-selection silently never
+  // applies if the paywall opens before getOfferings() resolves.
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  useEffect(() => {
+    if (packages.length === 0) return;
+    const annualIdx = packages.findIndex((p) => p.packageType === 'ANNUAL');
+    setSelectedIdx(annualIdx >= 0 ? annualIdx : 0);
+  }, [packages]);
 
   const handlePurchase = async () => {
     const pkg = packages[selectedIdx];
@@ -101,6 +106,15 @@ export function PaywallScreen() {
       </View>
 
       {/* Package selector */}
+      {packages.length === 0 ? (
+        <View style={styles.emptyOfferings}>
+          <Ionicons name="alert-circle-outline" size={22} color={Colors.textSecondary} />
+          <Text style={styles.emptyOfferingsText}>
+            Plans aren't available right now. Check your connection and try
+            again in a moment.
+          </Text>
+        </View>
+      ) : (
       <View style={styles.packages}>
         {packages.map((pkg, idx) => {
           const isAnnual = pkg.packageType === 'ANNUAL';
@@ -150,12 +164,16 @@ export function PaywallScreen() {
           );
         })}
       </View>
+      )}
 
       {/* CTA */}
       <TouchableOpacity
-        style={[styles.ctaBtn, loading && styles.ctaDisabled]}
+        style={[
+          styles.ctaBtn,
+          (loading || packages.length === 0) && styles.ctaDisabled,
+        ]}
         onPress={handlePurchase}
-        disabled={loading}
+        disabled={loading || packages.length === 0}
       >
         {loading ? (
           <ActivityIndicator color={Colors.white} />
@@ -175,7 +193,6 @@ export function PaywallScreen() {
 
       {/* Fine print */}
       <Text style={styles.finePrint}>
-        Payment will be charged to your App Store or Google Play account.
         Subscription auto-renews unless cancelled at least 24 hours before the
         end of the current period. Free scans, search, and single-profile
         cabinet remain free forever.
@@ -210,6 +227,16 @@ const styles = StyleSheet.create({
   features: { marginBottom: 24, gap: 14 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   featureText: { fontSize: 16, color: Colors.textPrimary },
+  emptyOfferings: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.teal50,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  emptyOfferingsText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
   packages: { gap: 12, marginBottom: 24 },
   packageCard: {
     flexDirection: 'row',

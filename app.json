@@ -35,7 +35,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "SameSalt needs camera access to scan medicine strips."
+          "cameraPermission": "SameSalt needs camera access to scan medicine strips.",
+          "recordAudioAndroidPermission": false
         }
       ],
       [
@@ -45,11 +46,6 @@
           "color": "#0F766E"
         }
       ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "your-eas-project-id"
-      }
-    }
+    ]
   }
 }

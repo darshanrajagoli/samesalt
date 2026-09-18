@@ -14,6 +14,7 @@ import { Config } from '../src/constants/config';
 import {
   Medicine,
   findAlternatives,
+  countAlternatives,
   getMedicineById,
 } from '../src/utils/db';
 import { MedicineCard } from '../src/components/MedicineCard';
@@ -37,6 +38,7 @@ export default function ResultsScreen() {
   const [loading, setLoading] = useState(true);
   const [scannedMedicine, setScannedMedicine] = useState<Medicine | null>(null);
   const [alternatives, setAlternatives] = useState<Medicine[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     load();
@@ -48,8 +50,12 @@ export default function ResultsScreen() {
       setScannedMedicine(med);
 
       if (med?.canonical_key) {
-        const alts = await findAlternatives(med.canonical_key);
+        const [alts, total] = await Promise.all([
+          findAlternatives(med.canonical_key),
+          countAlternatives(med.canonical_key),
+        ]);
         setAlternatives(alts);
+        setTotalCount(total);
       }
     } catch (err) {
       console.error('Failed to load results:', err);
@@ -127,11 +133,8 @@ export default function ResultsScreen() {
     );
   }
 
-  // Jan Aushadhi generics first, then rest sorted by price
-  const janAushadhi = alternatives.filter((m) => m.is_jan_aushadhi);
-  const rest = alternatives.filter((m) => !m.is_jan_aushadhi);
-
-  const allSorted = [...janAushadhi, ...rest];
+  // Already sorted by the DB query: Jan Aushadhi first, then per-unit price ascending.
+  const allSorted = alternatives;
 
   return (
     <View style={styles.container}>
@@ -153,7 +156,7 @@ export default function ResultsScreen() {
                   : null
               }
               saltName={scannedMedicine.salt_composition || 'Unknown'}
-              alternativesCount={alternatives.length}
+              alternativesCount={totalCount}
             />
 
             {/* Pharmacist card CTA */}
@@ -171,7 +174,10 @@ export default function ResultsScreen() {
         }
         ListFooterComponent={
           <Text style={styles.footer}>
-            Prices from {Config.DATASET_DATE} · {alternatives.length} brands found
+            Prices from {Config.DATASET_DATE} ·{' '}
+            {totalCount > allSorted.length
+              ? `showing ${allSorted.length} of ${totalCount} brands`
+              : `${totalCount} brands found`}
           </Text>
         }
         renderItem={({ item, index }) => (

@@ -49,28 +49,37 @@ SPELLING_MAP: dict[str, str] = {
 }
 
 # ── Narrow Therapeutic Index drugs ──────────────────────────────────────
+# Matched as SUBSTRINGS of the normalized salt name (see is_nti), because the
+# source dataset spells these many different ways (e.g. Levothyroxine appears
+# as "Thyroxine"). Keep entries as short, distinctive stems.
 NTI_SALTS: set[str] = {
     "warfarin",
+    "acenocoumarol",
     "phenytoin",
+    "fosphenytoin",
     "lithium",
-    "lithium carbonate",
-    "lithium citrate",
     "levothyroxine",
-    "levothyroxine sodium",
+    "thyroxine",
+    "liothyronine",
     "cyclosporine",
     "ciclosporin",
+    "cyclosporin",
     "digoxin",
     "carbamazepine",
     "valproic acid",
-    "sodium valproate",
+    "valproate",
+    "divalproex",
     "theophylline",
     "aminophylline",
     "tacrolimus",
     "sirolimus",
     "everolimus",
     "mycophenolate",
-    "mycophenolate mofetil",
+    "mycophenolic acid",
     "clonidine",
+    "procainamide",
+    "disopyramide",
+    "quinidine",
 }
 
 # ── Unit conversion to base (mg) ───────────────────────────────────────
@@ -279,43 +288,54 @@ def build_canonical_key(
 
 
 def is_nti(salts: list[tuple[str, str]]) -> bool:
-    """Check if any salt in the composition is a Narrow Therapeutic Index drug."""
+    """Check if any salt in the composition is a Narrow Therapeutic Index drug.
+
+    Uses substring matching against normalized salt names, since the source
+    dataset spells the same active many different ways (e.g. "Thyroxine",
+    "Divalproex Sodium", "Fosphenytoin Sodium") and exact-set matching missed
+    the majority of real NTI rows in the shipped dataset.
+    """
     for name, _ in salts:
-        if name in NTI_SALTS:
-            return True
+        for nti in NTI_SALTS:
+            if nti in name:
+                return True
     return False
 
 
 def parse_pack_size(pack_size_str: str) -> Optional[float]:
     """
     Parse pack size string to get number of units.
-    
+
+    The real dataset format is "strip of 10 tablets", "bottle of 100 ml Syrup",
+    "vial of 1 Injection", etc — the number does not lead the string, so this
+    searches anywhere in the text rather than anchoring at position 0.
+
     Examples:
+      "strip of 10 tablets" → 10
+      "bottle of 100 ml Syrup" → 100
       "10 tablets in 1 strip" → 10
-      "15 capsules in 1 bottle" → 15
-      "100ml in 1 bottle" → 100
       "30" → 30
     """
     if not pack_size_str or str(pack_size_str).strip().lower() in ("na", "nan", "", "-"):
         return None
-    
+
     text = str(pack_size_str).strip().lower()
-    
-    # "10 tablets in 1 strip" → 10
-    m = re.match(r"(\d+\.?\d*)\s*(?:tablets?|capsules?|strips?|pills?|sachets?|vials?|ampoules?|pieces?)?", text)
+
+    # Prefer a number immediately followed by a unit word, anywhere in the string:
+    # "strip of 10 tablets", "bottle of 100 ml Syrup", "vial of 2 ml Injection"
+    m = re.search(
+        r"(\d+\.?\d*)\s*(?:ml|tablets?|capsules?|pills?|sachets?|vials?|ampoules?|"
+        r"pieces?|drops?|respules?|injections?|units?)\b",
+        text,
+    )
     if m:
         return float(m.group(1))
-    
-    # "100ml" → 100
-    m = re.match(r"(\d+\.?\d*)\s*ml", text)
+
+    # Bare number anywhere
+    m = re.search(r"(\d+\.?\d*)", text)
     if m:
         return float(m.group(1))
-    
-    # Bare number
-    m = re.match(r"(\d+\.?\d*)", text)
-    if m:
-        return float(m.group(1))
-    
+
     return None
 
 
@@ -331,12 +351,16 @@ def is_jan_aushadhi(name: str, manufacturer: str) -> bool:
     lower_name = name.lower() if name else ""
     lower_mfr = manufacturer.lower() if manufacturer else ""
     
+    # NOTE: "generic pharmacy" was removed — it matched "DavaIndia Generic
+    # Pharmacy", a private retail chain (Zota Healthcare), not the government
+    # Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBJP) scheme. The
+    # shipped dataset contains zero genuine PMBJP products, so this function
+    # is expected to return False for every row until real PMBJP data exists.
     keywords = [
         "jan aushadhi",
         "janaushadhi",
         "pmbjp",
-        "pradhan mantri",
-        "generic pharmacy",
+        "pradhan mantri bhartiya",
         "bureau of pharma",
     ]
     

@@ -42,7 +42,7 @@ export function RevenueCatProvider({
   useEffect(() => {
     async function init() {
       try {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
 
         const apiKey =
           Platform.OS === 'ios'

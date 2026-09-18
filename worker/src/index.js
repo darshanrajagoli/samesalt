@@ -11,8 +11,26 @@
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, X-App-Secret",
 };
+
+const MAX_BODY_BYTES = 8 * 1024 * 1024; // 8MB — well above a compressed strip photo
+const RATE_LIMIT_PER_MINUTE = 10;
+
+// In-memory per-isolate rate limiting. This is not durable across Cloudflare
+// isolate restarts/regions — it's a cheap backstop against casual abuse of a
+// free/hackathon-tier worker, not a hard guarantee. A Durable Object would be
+// the correct fix for real production traffic.
+const requestLog = new Map(); // ip -> timestamps[]
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowStart = now - 60_000;
+  const timestamps = (requestLog.get(ip) || []).filter((t) => t > windowStart);
+  timestamps.push(now);
+  requestLog.set(ip, timestamps);
+  return timestamps.length > RATE_LIMIT_PER_MINUTE;
+}
 
 const SYSTEM_PROMPT = `You are a medicine strip OCR assistant for the Indian pharmaceutical market.
 
@@ -37,18 +55,18 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
+    const url = new URL(request.url);
+
+    if (url.pathname === "/health") {
+      return jsonResponse({ status: "ok" });
+    }
+
     if (request.method !== "POST") {
       return jsonResponse({ error: "Method not allowed" }, 405);
     }
 
-    const url = new URL(request.url);
-
     if (url.pathname === "/scan") {
       return handleScan(request, env);
-    }
-
-    if (url.pathname === "/health") {
-      return jsonResponse({ status: "ok" });
     }
 
     return jsonResponse({ error: "Not found" }, 404);
@@ -57,11 +75,37 @@ export default {
 
 async function handleScan(request, env) {
   try {
+    // Weak but real: a shared secret baked into the app bundle. It stops
+    // drive-by scripts hitting the endpoint cold; it does not stop someone
+    // who decompiles the APK. Combined with the rate limit and OpenRouter's
+    // own account spend cap, that's the realistic ceiling for a hackathon
+    // worker with no user accounts.
+    if (env.APP_SHARED_SECRET) {
+      const provided = request.headers.get("X-App-Secret");
+      if (provided !== env.APP_SHARED_SECRET) {
+        return jsonResponse({ error: "Unauthorized" }, 401);
+      }
+    }
+
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    if (isRateLimited(ip)) {
+      return jsonResponse({ error: "Too many requests, try again in a minute" }, 429);
+    }
+
+    const contentLength = Number(request.headers.get("Content-Length") || 0);
+    if (contentLength > MAX_BODY_BYTES) {
+      return jsonResponse({ error: "Request too large" }, 413);
+    }
+
     const body = await request.json();
     const { image } = body;
 
     if (!image) {
       return jsonResponse({ error: "Missing 'image' field (base64)" }, 400);
+    }
+
+    if (image.length > MAX_BODY_BYTES) {
+      return jsonResponse({ error: "Image too large" }, 413);
     }
 
     if (!env.OPENROUTER_API_KEY) {
@@ -90,7 +134,7 @@ async function handleScan(request, env) {
           "X-Title": "SameSalt",
         },
         body: JSON.stringify({
-          model: "google/gemini-flash-1.5",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             {
@@ -119,7 +163,11 @@ async function handleScan(request, env) {
       const errText = await openRouterResponse.text();
       console.error("OpenRouter error:", openRouterResponse.status, errText);
       return jsonResponse(
-        { error: "Vision API error", status: openRouterResponse.status },
+        {
+          error: "Vision API error",
+          status: openRouterResponse.status,
+          detail: errText.slice(0, 500),
+        },
         502
       );
     }

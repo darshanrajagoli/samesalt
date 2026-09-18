@@ -19,6 +19,7 @@ import {
   saveAppData,
   updateMedicineRefill,
 } from '../utils/storage';
+import { cancelRefillReminder, scheduleRefillReminder } from '../utils/notifications';
 
 interface CabinetContextType {
   data: AppData;
@@ -113,6 +114,7 @@ export function CabinetProvider({ children }: { children: React.ReactNode }) {
 
   const removeMedicine = useCallback(
     async (medicineId: number) => {
+      await cancelRefillReminder(medicineId);
       await persist(
         removeMedicineFromCabinet(data, data.active_profile_id, medicineId)
       );
@@ -122,9 +124,30 @@ export function CabinetProvider({ children }: { children: React.ReactNode }) {
 
   const setRefillReminder = useCallback(
     async (medicineId: number, days: number) => {
-      await persist(
-        updateMedicineRefill(data, data.active_profile_id, medicineId, days)
+      const updated = updateMedicineRefill(
+        data,
+        data.active_profile_id,
+        medicineId,
+        days
       );
+      await persist(updated);
+
+      const profile = updated.profiles.find(
+        (p) => p.id === data.active_profile_id
+      );
+      const medicine = profile?.medicines.find((m) => m.id === medicineId);
+      if (medicine) {
+        const scheduledId = await scheduleRefillReminder(medicine);
+        if (!scheduledId) {
+          // Permission denied or scheduling failed — the days value is still
+          // saved, but no notification will actually fire. Callers should
+          // check the return value of requestNotificationPermissions
+          // upstream if they need to warn the user.
+          console.warn(
+            `Refill reminder for medicine ${medicineId} was saved but could not be scheduled (permission denied?)`
+          );
+        }
+      }
     },
     [data, persist]
   );

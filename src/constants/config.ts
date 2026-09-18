@@ -5,12 +5,22 @@
 export const Config = {
   // Cloudflare Worker URL for medicine strip scanning
   // Deploy the worker in /worker and paste the URL here
-  SCAN_WORKER_URL: 'https://samesalt-scan.YOUR_SUBDOMAIN.workers.dev',
+  SCAN_WORKER_URL: 'https://samesalt-scan.samesalt-worker.workers.dev',
+
+  // Shared secret sent as X-App-Secret to the scan worker. This is baked
+  // into the app bundle, so it is NOT a real secret — it is extractable from
+  // the APK. It exists only to stop casual/drive-by scripted abuse of the
+  // public endpoint, not a determined attacker. Must match the worker's
+  // APP_SHARED_SECRET (set via `wrangler secret put APP_SHARED_SECRET`).
+  SCAN_WORKER_SECRET: '9ff5481989e8f84a4b9f303386ad7f4faaac3368427dd4c8',
 
   // RevenueCat API key (public — safe to ship in app)
   // Get this from app.revenuecat.com → Project → API Keys
-  REVENUECAT_API_KEY_APPLE: 'appl_YOUR_KEY_HERE',
-  REVENUECAT_API_KEY_GOOGLE: 'goog_YOUR_KEY_HERE',
+  // Using RevenueCat Test Store key for both platforms (demo mode — no
+  // App Store/Play Store developer account required). Replace with real
+  // appl_/goog_ keys before a production release.
+  REVENUECAT_API_KEY_APPLE: 'test_HwLgSuwFareISTJMRnvZgUSnSJc',
+  REVENUECAT_API_KEY_GOOGLE: 'test_HwLgSuwFareISTJMRnvZgUSnSJc',
 
   // RevenueCat entitlement and offering IDs
   ENTITLEMENT_FAMILY: 'family',

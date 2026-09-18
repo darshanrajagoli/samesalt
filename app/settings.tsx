@@ -91,13 +91,33 @@ export default function SettingsScreen() {
             <Text style={styles.value}>{Config.DATASET_DATE}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Source</Text>
-            <Text style={styles.value}>Kaggle A-Z Medicine Dataset</Text>
-          </View>
-          <View style={styles.row}>
             <Text style={styles.label}>Version</Text>
             <Text style={styles.value}>1.0.0</Text>
           </View>
+        </View>
+      </View>
+
+      {/* Data attribution — required by the dataset's CC BY-SA 4.0 license */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Data Attribution</Text>
+        <View style={styles.card}>
+          <Text style={styles.disclaimer}>
+            Medicine data is adapted from "A-Z Medicine Dataset of India" by
+            Shudhanshu Singh, licensed under CC BY-SA 4.0. Salt names,
+            strengths, and dosage forms have been normalized and re-keyed for
+            matching; prices and manufacturer names are shown as published.
+          </Text>
+          <TouchableOpacity
+            onPress={() =>
+              Linking.openURL(
+                'https://www.kaggle.com/datasets/shudhanshusingh/az-medicine-dataset-of-india'
+              )
+            }
+          >
+            <Text style={[styles.disclaimer, styles.link]}>
+              View dataset on Kaggle →
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -196,5 +216,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
     lineHeight: 20,
+  },
+  link: {
+    color: Colors.teal600,
+    fontWeight: '600',
+    marginTop: 8,
   },
 });

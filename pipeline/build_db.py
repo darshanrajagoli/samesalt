@@ -53,12 +53,13 @@ def build_database(csv_path: Path, db_path: Path) -> None:
 
     # Identify columns (dataset has inconsistent naming across versions)
     col_map = {}
+    composition_cols = []
     for col in df.columns:
         cl = col.strip().lower().replace(" ", "_")
-        if "medicine" in cl and "name" in cl:
+        if cl == "name" or ("medicine" in cl and "name" in cl):
             col_map["name"] = col
         elif "composition" in cl or "salt" in cl:
-            col_map["composition"] = col
+            composition_cols.append(col)
         elif "price" in cl and "unit" not in cl:
             col_map["price"] = col
         elif "manufacturer" in cl or "company" in cl:
@@ -69,11 +70,16 @@ def build_database(csv_path: Path, db_path: Path) -> None:
             pass  # skip
         elif cl in ("type", "dosage_form", "form"):
             col_map["form"] = col
-    
-    required = ["name", "composition"]
+        elif "discontinued" in cl:
+            col_map["discontinued"] = col
+
+    if composition_cols:
+        col_map["composition_cols"] = sorted(composition_cols)
+
+    required = ["name"]
     missing = [k for k in required if k not in col_map]
-    if missing:
-        print(f"❌ Missing required columns: {missing}")
+    if missing or not composition_cols:
+        print(f"❌ Missing required columns: {missing or ['composition']}")
         print(f"   Available: {list(df.columns)}")
         sys.exit(1)
 
@@ -101,7 +107,8 @@ def build_database(csv_path: Path, db_path: Path) -> None:
             dosage_form TEXT,
             release_type TEXT,
             is_nti INTEGER DEFAULT 0,
-            is_jan_aushadhi INTEGER DEFAULT 0
+            is_jan_aushadhi INTEGER DEFAULT 0,
+            composition_incomplete INTEGER DEFAULT 0
         );
 
         CREATE INDEX idx_canonical_key ON medicines(canonical_key);
@@ -117,16 +124,26 @@ def build_database(csv_path: Path, db_path: Path) -> None:
     print("🔧 Processing medicines...")
     start = time.time()
 
+    # Pattern for names that encode 3+ strengths (e.g. "100mg/325mg/15mg") —
+    # the dataset only has two composition columns, so these are truncated to
+    # two salts and must not be treated as a complete/reliable composition.
+    incomplete_pattern = re.compile(r"\d+\.?\d*\s*(?:mg|mcg|ml|g|iu)\s*/\s*\d+\.?\d*\s*(?:mg|mcg|ml|g|iu)\s*/\s*\d+", re.IGNORECASE)
+
     batch = []
     skipped = 0
+    discontinued_skipped = 0
     nti_count = 0
     ja_count = 0
+    incomplete_count = 0
 
     for i, row in df.iterrows():
         name = str(row[col_map["name"]]).strip() if pd.notna(row[col_map["name"]]) else ""
-        composition = str(row[col_map["composition"]]).strip() if pd.notna(row[col_map["composition"]]) else ""
+        composition = " + ".join(
+            str(row[c]).strip() for c in col_map["composition_cols"]
+            if pd.notna(row[c]) and str(row[c]).strip()
+        )
         manufacturer = str(row.get(col_map.get("manufacturer", ""), "")).strip() if col_map.get("manufacturer") and pd.notna(row.get(col_map["manufacturer"])) else ""
-        
+
         price_raw = row.get(col_map.get("price", "")) if "price" in col_map else None
         price = clean_price(price_raw)
 
@@ -134,6 +151,12 @@ def build_database(csv_path: Path, db_path: Path) -> None:
         pack_size = parse_pack_size(pack_size_raw)
 
         form_raw = str(row.get(col_map.get("form", ""), "")) if "form" in col_map else ""
+
+        if "discontinued" in col_map:
+            discontinued_raw = row.get(col_map["discontinued"])
+            if pd.notna(discontinued_raw) and str(discontinued_raw).strip().lower() in ("true", "1", "yes"):
+                discontinued_skipped += 1
+                continue
 
         if not name or not composition or composition.lower() in ("na", "nan", "-", "not available"):
             skipped += 1
@@ -165,6 +188,14 @@ def build_database(csv_path: Path, db_path: Path) -> None:
         if ja:
             ja_count += 1
 
+        # Flag names that encode 3+ strengths — the dataset only has two
+        # composition columns, so these are stored with a truncated,
+        # unreliable canonical key and must be excluded from alternative
+        # matching (still searchable by name).
+        incomplete = bool(incomplete_pattern.search(name))
+        if incomplete:
+            incomplete_count += 1
+
         batch.append((
             name,
             manufacturer,
@@ -177,11 +208,12 @@ def build_database(csv_path: Path, db_path: Path) -> None:
             release_type,
             1 if nti else 0,
             1 if ja else 0,
+            1 if incomplete else 0,
         ))
 
         if len(batch) >= 5000:
             cur.executemany(
-                "INSERT INTO medicines (name, manufacturer, salt_composition, canonical_key, price, pack_size, per_unit_price, dosage_form, release_type, is_nti, is_jan_aushadhi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO medicines (name, manufacturer, salt_composition, canonical_key, price, pack_size, per_unit_price, dosage_form, release_type, is_nti, is_jan_aushadhi, composition_incomplete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 batch,
             )
             batch = []
@@ -192,7 +224,7 @@ def build_database(csv_path: Path, db_path: Path) -> None:
     # Insert remaining
     if batch:
         cur.executemany(
-            "INSERT INTO medicines (name, manufacturer, salt_composition, canonical_key, price, pack_size, per_unit_price, dosage_form, release_type, is_nti, is_jan_aushadhi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO medicines (name, manufacturer, salt_composition, canonical_key, price, pack_size, per_unit_price, dosage_form, release_type, is_nti, is_jan_aushadhi, composition_incomplete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             batch,
         )
 
@@ -218,10 +250,11 @@ def build_database(csv_path: Path, db_path: Path) -> None:
     db_size = db_path.stat().st_size / (1024 * 1024)
 
     print(f"\n✅ Database built in {elapsed:.1f}s")
-    print(f"   📊 {total:,} medicines indexed ({skipped:,} skipped)")
+    print(f"   📊 {total:,} medicines indexed ({skipped:,} skipped, {discontinued_skipped:,} discontinued excluded)")
     print(f"   🔑 {unique_keys:,} unique salt compositions")
     print(f"   ⚠️  {nti_count:,} NTI-flagged entries")
     print(f"   🏥 {ja_count:,} Jan Aushadhi entries")
+    print(f"   🧩 {incomplete_count:,} entries flagged composition_incomplete (3+ salts truncated to 2)")
     print(f"   💾 {db_size:.1f} MB → {db_path}")
 
     conn.close()

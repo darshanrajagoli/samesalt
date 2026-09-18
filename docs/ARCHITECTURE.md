@@ -47,7 +47,7 @@ Kaggle CSV ──▶ normalize.py ──▶ build_db.py ──▶ samesalt.db
                  - Tag release type       - Compute per-unit price
 ```
 
-The pipeline produces a ~25MB SQLite database that ships inside the app bundle.
+The pipeline produces a ~65MB SQLite database that ships inside the app bundle.
 No server is needed for lookups — all queries run locally.
 
 ### 2. Scan Flow (AI-powered, online)
@@ -136,9 +136,15 @@ When an NTI drug is detected:
 3. The user is told to continue their prescribed brand
 4. The user is told to consult their doctor
 
-NTI drugs in the database: Warfarin, Phenytoin, Lithium, Levothyroxine,
-Cyclosporine, Digoxin, Carbamazepine, Valproic Acid, Theophylline,
-Tacrolimus, Sirolimus, Everolimus, Mycophenolate, Clonidine.
+NTI drugs in the database: Warfarin, Acenocoumarol, Phenytoin, Fosphenytoin,
+Lithium, Levothyroxine, Liothyronine, Cyclosporine, Digoxin, Carbamazepine,
+Valproic Acid, Divalproex, Theophylline, Tacrolimus, Sirolimus, Everolimus,
+Mycophenolate, Clonidine, Procainamide, Disopyramide, Quinidine.
+
+Matching is done by substring against the normalized salt name (not exact-set
+membership), because the source dataset spells the same active many
+different ways — e.g. Levothyroxine appears in the CSV as "Thyroxine". See
+`pipeline/normalize.py::is_nti`.
 
 ## Privacy
 

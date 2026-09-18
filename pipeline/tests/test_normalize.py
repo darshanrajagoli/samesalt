@@ -156,6 +156,20 @@ class TestIsNTI:
     def test_combo_with_one_nti(self):
         assert is_nti([("amlodipine", "5mg"), ("warfarin", "2mg")]) is True
 
+    # Regression tests: the real dataset spells these differently than the
+    # idealized INN names above, and exact-set matching missed all of them.
+    def test_thyroxine_spelling_is_flagged(self):
+        assert is_nti([("thyroxine", "100mcg")]) is True
+
+    def test_divalproex_is_flagged(self):
+        assert is_nti([("divalproex sodium", "500mg")]) is True
+
+    def test_acenocoumarol_is_flagged(self):
+        assert is_nti([("acenocoumarol", "2mg")]) is True
+
+    def test_fosphenytoin_is_flagged(self):
+        assert is_nti([("fosphenytoin sodium", "150mg")]) is True
+
 
 class TestParsePackSize:
     def test_tablets_in_strip(self):
@@ -173,6 +187,21 @@ class TestParsePackSize:
     def test_na_returns_none(self):
         assert parse_pack_size("NA") is None
         assert parse_pack_size("") is None
+
+    # Regression tests: these are the actual pack_size_label formats in the
+    # shipped dataset — the original regex was anchored at position 0 and
+    # required a leading digit, so every one of these returned None.
+    def test_strip_of_n_tablets(self):
+        assert parse_pack_size("strip of 10 tablets") == 10
+
+    def test_bottle_of_n_ml_syrup(self):
+        assert parse_pack_size("bottle of 100 ml Syrup") == 100
+
+    def test_vial_of_n_ml_injection(self):
+        assert parse_pack_size("vial of 2 ml Injection") == 2
+
+    def test_packet_of_n_sachet(self):
+        assert parse_pack_size("packet of 5 sachets") == 5
 
 
 class TestComputePerUnitPrice:
@@ -236,8 +265,14 @@ class TestIsJanAushadhi:
     def test_pmbjp_in_manufacturer(self):
         assert is_jan_aushadhi("Paracetamol 500mg", "PMBJP") is True
 
-    def test_generic_pharmacy(self):
-        assert is_jan_aushadhi("Paracetamol", "Generic Pharmacy") is True
+    def test_private_generic_chain_is_not_jan_aushadhi(self):
+        # "Generic Pharmacy" (e.g. DavaIndia Generic Pharmacy) is a private
+        # retail chain, not the government PMBJP scheme — must NOT be flagged.
+        assert is_jan_aushadhi("Paracetamol", "DavaIndia Generic Pharmacy") is False
+
+    def test_genuine_pmbjp_is_jan_aushadhi(self):
+        assert is_jan_aushadhi("Paracetamol", "Pradhan Mantri Bhartiya Janaushadhi Pariyojana") is True
+        assert is_jan_aushadhi("Paracetamol IP", "Jan Aushadhi Kendra") is True
 
     def test_normal_medicine(self):
         assert is_jan_aushadhi("Crocin", "GSK") is False

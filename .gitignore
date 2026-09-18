@@ -40,9 +40,11 @@ pipeline/tests/__pycache__/
 worker/node_modules/
 worker/.wrangler/
 
-# Database (large binary, built from pipeline)
-# Uncomment if you want to track it in git:
-# assets/samesalt.db
+# Database (large binary, built from pipeline) — tracked via Git LFS, see .gitattributes
+
+# Dev scratch files — not part of the shipped repo
+emulator_*.png
+RED_TEAM_PROMPT.md
 
 # OS
 .DS_Store
