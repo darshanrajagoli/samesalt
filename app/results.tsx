@@ -136,6 +136,22 @@ export default function ResultsScreen() {
   // Already sorted by the DB query: Jan Aushadhi first, then per-unit price ascending.
   const allSorted = alternatives;
 
+  const prices = allSorted
+    .map((m) => m.per_unit_price)
+    .filter((p): p is number => p != null)
+    .sort((a, b) => a - b);
+  const median = prices.length > 0 ? prices[Math.floor(prices.length / 2)] : null;
+  const cheapestPerUnit =
+    prices.length > 0 ? Math.min(...prices) : null;
+  // The source dataset mixes pack-size units (per-tablet vs per-ml vs
+  // per-dose) and has occasional scrape errors, so an isolated price far
+  // below the rest of the same canonical key is more likely bad data than a
+  // real 90%+ branding markup — don't advertise it as a savings opportunity.
+  const priceUnverified =
+    cheapestPerUnit != null && median != null && median > 0
+      ? cheapestPerUnit < median / 10
+      : false;
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -146,17 +162,10 @@ export default function ResultsScreen() {
           <>
             <SavingsHeader
               scannedPerUnit={scannedMedicine.per_unit_price}
-              cheapestPerUnit={
-                allSorted.length > 0
-                  ? Math.min(
-                      ...allSorted
-                        .filter((m) => m.per_unit_price != null)
-                        .map((m) => m.per_unit_price!)
-                    )
-                  : null
-              }
+              cheapestPerUnit={cheapestPerUnit}
               saltName={scannedMedicine.salt_composition || 'Unknown'}
               alternativesCount={totalCount}
+              priceUnverified={priceUnverified}
             />
 
             {/* Pharmacist card CTA */}

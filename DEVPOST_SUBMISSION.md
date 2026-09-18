@@ -17,8 +17,9 @@ dozens of brand names at wildly different prices — and most people have no way
 know which brands are actually interchangeable. Point the camera at any medicine
 strip (or type the brand name) and SameSalt instantly shows every other brand with
 the *exact same salt composition, strength, and dosage form*, sorted cheapest
-first by real per-unit price (government Jan Aushadhi generics get top
-priority whenever the underlying data includes them).
+first by real per-unit price. The app also has logic to surface government
+Jan Aushadhi generics first when present — the current dataset doesn't
+contain verified Jan Aushadhi listings, so this activates once that data is added.
 
 It runs entirely offline for lookups, using a local database of 246,000+
 medicines built from a public Indian drug pricing dataset. For narrow therapeutic
@@ -47,9 +48,9 @@ launch.
 - **Scan feature**: a photo is sent to a Cloudflare Worker, which proxies the
   request to a vision-language model via OpenRouter (Google Gemini Flash).
   This keeps the API key server-side — it never ships inside the app bundle.
-- **RevenueCat**: full subscription lifecycle — entitlements, offerings,
-  packages, purchase flow, restore, and paywall gating — using anonymous
-  device IDs, so there's no login or account system anywhere in the app.
+- **RevenueCat**: entitlements, offerings, packages, purchase flow, and
+  paywall gating — using anonymous device IDs, so there's no login or
+  account system anywhere in the app.
 - **expo-sqlite** for all local medicine lookups (fully offline, no server
   round-trip for search), **AsyncStorage** for the personal medicine cabinet
   and family profiles, and **expo-notifications** for refill reminders.

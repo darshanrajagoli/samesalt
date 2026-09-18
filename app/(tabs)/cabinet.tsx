@@ -50,11 +50,20 @@ export default function CabinetScreen() {
       router.push('/paywall');
       return;
     }
+    const pick = async (days: number) => {
+      const ok = await setRefillReminder(med.id, days);
+      if (!ok) {
+        Alert.alert(
+          'Reminder Not Scheduled',
+          'SameSalt needs notification permission to remind you. Enable it in your phone Settings > Apps > SameSalt > Notifications, then try again.'
+        );
+      }
+    };
     Alert.alert('Refill Reminder', 'Remind me to refill in:', [
-      { text: '15 days', onPress: () => setRefillReminder(med.id, 15) },
-      { text: '30 days', onPress: () => setRefillReminder(med.id, 30) },
-      { text: '60 days', onPress: () => setRefillReminder(med.id, 60) },
-      { text: '90 days', onPress: () => setRefillReminder(med.id, 90) },
+      { text: '15 days', onPress: () => pick(15) },
+      { text: '30 days', onPress: () => pick(30) },
+      { text: '60 days', onPress: () => pick(60) },
+      { text: '90 days', onPress: () => pick(90) },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };

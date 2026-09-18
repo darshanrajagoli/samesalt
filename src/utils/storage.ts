@@ -144,7 +144,7 @@ export function updateMedicineRefill(
   data: AppData,
   profileId: string,
   medicineId: number,
-  refillDays: number
+  refillDays: number | null
 ): AppData {
   const profiles = data.profiles.map((p) => {
     if (p.id !== profileId) return p;
@@ -154,7 +154,7 @@ export function updateMedicineRefill(
         if (m.id !== medicineId) return m;
         return {
           ...m,
-          refill_reminder_days: refillDays,
+          refill_reminder_days: refillDays ?? undefined,
           last_refill: new Date().toISOString(),
         };
       }),

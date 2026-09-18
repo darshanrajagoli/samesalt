@@ -15,15 +15,15 @@ Record with the emulator/phone screen + your voice. Total target: ~1:45.
 **[0:12–0:35] Search demo (screen recording)**
 
 1. Open the app, tap the search bar.
-2. Type "Augmentin" slowly enough for viewers to read.
-3. Tap **Augmentin 625 Duo Tablet**.
-4. Let the alternatives screen load — pause 1 second on the "Save up to 97%"
-   banner and the #1 result (Apcil, ₹0.70/unit).
+2. Type "Dolo 650" slowly enough for viewers to read.
+3. Tap **Dolo 650 Tablet**.
+4. Let the alternatives screen load — pause 1 second on the savings banner
+   and the #1 result (Alice 650mg, ₹0.33/tablet).
 
 > "Search any brand name — SameSalt finds every medicine with the exact
 > same salt, strength, and dosage form, sorted by real price per tablet.
-> Same drug, ₹0.70 a tablet instead of ₹6 — that's a 97% saving, verified
-> against India's official medicine pricing data."
+> Dolo 650 costs about ₹2.28 a tablet — the same paracetamol 650mg from
+> another manufacturer costs ₹0.33 a tablet. Same drug, 85% cheaper."
 
 ---
 
@@ -66,9 +66,9 @@ Record with the emulator/phone screen + your voice. Total target: ~1:45.
 
 **[1:35–1:48] Close**
 
-> "SameSalt — built solo for the RevenueCat Shipaton, entirely offline
-> after the first load, using India's own public medicine data. Same drug,
-> lower price, one scan away."
+> "SameSalt — built solo for the RevenueCat Shipaton. Medicine lookups run
+> entirely offline from an on-device database; scanning uses a quick cloud
+> lookup. Same drug, lower price, one scan away."
 
 Show: app icon + GitHub repo URL text on screen
 (`github.com/darshanrajagoli/samesalt`).

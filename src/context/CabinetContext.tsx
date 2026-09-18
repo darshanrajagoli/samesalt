@@ -35,7 +35,7 @@ interface CabinetContextType {
   // Medicine cabinet
   saveMedicine: (medicine: SavedMedicine) => Promise<void>;
   removeMedicine: (medicineId: number) => Promise<void>;
-  setRefillReminder: (medicineId: number, days: number) => Promise<void>;
+  setRefillReminder: (medicineId: number, days: number) => Promise<boolean>;
 
   // Onboarding
   completeOnboarding: () => Promise<void>;
@@ -139,15 +139,15 @@ export function CabinetProvider({ children }: { children: React.ReactNode }) {
       if (medicine) {
         const scheduledId = await scheduleRefillReminder(medicine);
         if (!scheduledId) {
-          // Permission denied or scheduling failed — the days value is still
-          // saved, but no notification will actually fire. Callers should
-          // check the return value of requestNotificationPermissions
-          // upstream if they need to warn the user.
-          console.warn(
-            `Refill reminder for medicine ${medicineId} was saved but could not be scheduled (permission denied?)`
+          // Permission denied or scheduling failed — roll back the persisted
+          // days value so the UI doesn't show a reminder that will never fire.
+          await persist(
+            updateMedicineRefill(updated, data.active_profile_id, medicineId, null)
           );
+          return false;
         }
       }
+      return true;
     },
     [data, persist]
   );

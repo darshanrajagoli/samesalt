@@ -80,11 +80,15 @@ async function handleScan(request, env) {
     // who decompiles the APK. Combined with the rate limit and OpenRouter's
     // own account spend cap, that's the realistic ceiling for a hackathon
     // worker with no user accounts.
-    if (env.APP_SHARED_SECRET) {
-      const provided = request.headers.get("X-App-Secret");
-      if (provided !== env.APP_SHARED_SECRET) {
-        return jsonResponse({ error: "Unauthorized" }, 401);
-      }
+    if (!env.APP_SHARED_SECRET) {
+      // Fail closed: if the secret binding is ever missing (cleared, or lost
+      // on a redeploy), refuse rather than silently becoming an open proxy
+      // to a paid API.
+      return jsonResponse({ error: "Server misconfigured" }, 500);
+    }
+    const provided = request.headers.get("X-App-Secret");
+    if (provided !== env.APP_SHARED_SECRET) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";

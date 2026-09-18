@@ -9,6 +9,10 @@ interface Props {
   cheapestPerUnit: number | null;
   saltName: string;
   alternativesCount: number;
+  // True when the cheapest price is implausibly far below the typical price
+  // for this salt (likely a scrape error or a pack-size unit mismatch, e.g.
+  // "per inhaler" vs "per dose"), rather than a real branding markup.
+  priceUnverified?: boolean;
 }
 
 export function SavingsHeader({
@@ -16,11 +20,13 @@ export function SavingsHeader({
   cheapestPerUnit,
   saltName,
   alternativesCount,
+  priceUnverified,
 }: Props) {
   const hasSavings =
     scannedPerUnit != null &&
     cheapestPerUnit != null &&
-    scannedPerUnit > cheapestPerUnit;
+    scannedPerUnit > cheapestPerUnit &&
+    !priceUnverified;
 
   const savingsPerUnit = hasSavings
     ? scannedPerUnit! - cheapestPerUnit!
@@ -51,6 +57,17 @@ export function SavingsHeader({
               {formatPrice(savingsPerMonth)}/month
             </Text>
           </View>
+        </View>
+      ) : null}
+
+      {priceUnverified ? (
+        <View style={styles.unverifiedBox}>
+          <Ionicons name="alert-circle-outline" size={18} color={Colors.textSecondary} />
+          <Text style={styles.unverifiedText}>
+            Price data for this match looks inconsistent (unit or pack-size
+            mismatch) — savings estimate hidden. Compare prices below yourself
+            before switching.
+          </Text>
         </View>
       ) : null}
     </View>
@@ -92,5 +109,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#166534',
     marginTop: 2,
+  },
+  unverifiedBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.gray100 ?? '#F3F4F6',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    gap: 10,
+  },
+  unverifiedText: {
+    flex: 1,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 17,
   },
 });

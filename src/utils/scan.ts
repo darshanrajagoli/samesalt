@@ -14,10 +14,13 @@ export interface ScanResult {
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1200;
-// Errors worth retrying: rate limit, gateway/upstream hiccups, timeouts.
-// NOT retried: 401 (bad secret), 400/413 (bad request) — retrying those
-// just wastes time and OpenRouter spend for a guaranteed repeat failure.
-const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+const REQUEST_TIMEOUT_MS = 30_000;
+// Errors worth retrying: gateway/upstream hiccups. NOT retried: 401 (bad
+// secret), 400/413/422 (bad request) — wastes time and OpenRouter spend for
+// a guaranteed repeat failure. 429 is also excluded: the worker's rate-limit
+// window is a fixed 60s, so a 1-2s backoff can never clear it — retrying
+// just adds latency for the identical result.
+const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -36,6 +39,8 @@ export async function scanMedicineStrip(
   let lastError: Error = new Error('Scan failed');
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
       const response = await fetch(`${Config.SCAN_WORKER_URL}/scan`, {
         method: 'POST',
@@ -44,6 +49,7 @@ export async function scanMedicineStrip(
           'X-App-Secret': Config.SCAN_WORKER_SECRET,
         },
         body: JSON.stringify({ image: base64Image }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -67,13 +73,18 @@ export async function scanMedicineStrip(
 
       return (result as any).data as ScanResult;
     } catch (err) {
-      // Network-level failure (no response at all) — also worth a retry.
-      if (err instanceof TypeError && attempt < MAX_RETRIES) {
-        lastError = err;
+      // Network-level failure (no response at all) or a timed-out request —
+      // also worth a retry.
+      const isNetworkFailure = err instanceof TypeError;
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      if ((isNetworkFailure || isTimeout) && attempt < MAX_RETRIES) {
+        lastError = isTimeout ? new Error('Request timed out') : (err as Error);
         await sleep(RETRY_DELAY_MS * (attempt + 1));
         continue;
       }
-      throw err;
+      throw isTimeout ? new Error('Request timed out') : err;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
