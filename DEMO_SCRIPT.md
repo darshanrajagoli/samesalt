@@ -75,86 +75,124 @@ Show: app icon + GitHub repo URL text on screen
 
 ---
 
-## Pre-flight checklist (do this BEFORE you hit record)
+## STEP 1 — Get the app open and on screen
 
-Do all of this once, up front — it's what separates a smooth take from five
-retakes.
+**Check this first:** look at your taskbar (bottom of screen) for a window
+that looks like a phone with the SameSalt app already open on it. If you
+find one, the app is already running — skip straight to **STEP 2**.
 
-1. **App state:** the app is already installed and running on the emulator,
-   the medicine database has finished loading (open it once and confirm the
-   home screen shows the search bar, not "Loading medicine database..."),
-   and camera permission is already granted (the emulator's back camera is
-   wired to your webcam — you've been given a "Grant Camera Access" prompt
-   once already; if you see it again mid-recording, that means the app was
-   reinstalled since — tell me and I'll re-grant it before you record).
-2. **Physical strip ready:** have a real medicine strip within arm's reach
-   for the scan segment — any strip with a printed name works (an empty
-   Crocin/Dolo/Paracetamol strip is fine). Since the emulator's camera is
-   now your **webcam**, you'll hold the strip up to your actual webcam, not
-   the phone screen.
-3. **Audio check:** record 5 seconds of you talking, play it back. If it's
-   quiet, echoey, or picking up fan/AC noise, move closer to the mic or
-   switch to headphones-with-mic. Judges forgive so-so visuals; they do not
-   forgive audio they can't understand.
-4. **Lighting:** make sure the room isn't backlit (window behind you) if
-   your face appears at all — put light in front of you, not behind.
-5. **Quiet room:** close other apps/notifications on this machine so nothing
-   pings or pops up mid-recording (Slack, email, etc.) — you'll be
-   recording the full screen area, not just the emulator window, unless you
-   crop the recording to just the emulator.
-6. **Do a full dry run once, unrecorded** — read every line out loud while
-   tapping through the app, stopwatch it. If you're way over ~1:50, decide
-   now what to trim (the safest cut is shortening pauses between taps, not
-   cutting a whole segment).
-7. **Know your stop condition:** decide before you start that a small
-   stumble is NOT a reason to restart — only restart on a real mistake
-   (wrong screen, app crash, long silence). Judges care about clarity, not
-   a flawless take.
+If you don't see it, do this exactly:
 
-## Brain-dead recording instructions
+1. Press the **Windows key**, type `cmd`, and press **Enter**. A black
+   window opens — this is the Command Prompt.
+2. Type exactly this, then press **Enter**:
+   ```
+   cd Downloads\samesalt
+   ```
+3. Type exactly this, then press **Enter**:
+   ```
+   npx expo start --dev-client
+   ```
+4. Wait until you see a line containing the word `Metro` in that black
+   window. **Leave this window open** — do not close it, minimize it if you
+   want, but it must keep running the whole time you're recording.
+5. Press the **Windows key** again, type `Android Studio`, and open it.
+6. Once it's open, look for **"More Actions"** on the welcome screen (or
+   the **three-dot ⋮ menu** if a project is already open), and click
+   **Virtual Device Manager**.
+7. Find **SameSalt_Test** in the list and click the **▶ (play arrow)** next
+   to it. A phone-shaped window will appear — wait about 30-60 seconds for
+   it to fully turn on (you'll see an Android home screen with app icons).
+8. On that phone screen, find the **SameSalt** icon (a pill 💊) and click
+   it once.
+9. Wait about 15 seconds. The app will show "Loading medicine
+   database..." — once that's gone and you see a search bar, it's ready.
 
-1. Make sure the emulator (or your phone with the dev build installed) is
-   already running and the app is open to the home screen (see pre-flight
-   checklist above).
-2. Open a screen recorder:
-   - **On the emulator:** in Android Studio, click the **⋮** (three dots) in
-     the emulator toolbar → **Record and Playback** → **Start Recording**.
-   - **On a real phone:** swipe down twice from the top → tap **Screen
-     Record** → **Start**.
-4. Read the hook line out loud (or type it as on-screen text if you'd
-   rather not talk) while the app icon is showing.
-5. Follow the steps above in order: Search → Dolo 650 → tap result → wait
-   → Safety (Thyronorm) → Scan → Cabinet/paywall → Close.
-6. Speak each italicized line as you perform the matching step — don't
-   worry about being perfectly smooth, judges care about clarity, not
-   polish.
-7. Stop the recording once you've said the closing line.
-8. Trim the very start/end in any simple video editor (or your phone's
-   built-in Photos/Google Photos trimmer) so the total length is under
-   2:00.
-9. Upload to **YouTube** as **Unlisted** (not Private — Devpost needs a
-   link judges can open without asking you for access):
-   - Go to youtube.com → click the camera-with-plus icon (top right) →
-     **Upload video**.
-   - Pick your recording, set title to "SameSalt Demo — RevenueCat
-     Shipaton 2026".
-   - Under visibility, choose **Unlisted**.
-   - Click **Publish**, copy the link.
-10. Paste that YouTube link into the Devpost submission form's video field,
-    and into the "Try it out" section alongside the GitHub repo link.
+## STEP 2 — One-time checks before you record
 
-## If something goes wrong mid-recording
+1. **Have a real medicine strip nearby** for the scan part — any strip
+   with a name printed on it (an empty Crocin/Dolo/Paracetamol strip is
+   fine). You'll hold it up to your **webcam** (the one built into your
+   laptop or plugged in) — the app's "camera" is actually your webcam.
+2. **Say a few words out loud and listen back** (voice memo app, or just
+   ask yourself if you'd hear it clearly). If it sounds muffled or quiet,
+   move closer to your microphone.
+3. **Make sure light is in front of your face, not behind it** — if you're
+   sitting with a window behind you, move so the light is behind the
+   camera instead.
+4. **Close other windows/apps** so nothing pings or pops up while you're
+   recording (this looks bad on screen and is distracting).
 
-- **Don't stop and restart from zero for a small stumble** — pause, take a
-  breath, keep going. You can trim mid-video silences in the editor if
-  needed; a full restart costs more time than it saves.
-- **App shows "Something went wrong" with a Reload button:** tap Reload,
-  it'll recover in a couple seconds — keep that bit out of the final cut.
-- **Camera looks black/frozen on the Scan screen:** back out to Home and
-  back into Scan once; if it's still black, tell me immediately, don't
+## STEP 3 — Record it
+
+1. Click once on the emulator (phone) window so it's the active window.
+2. Press **Windows key + G**. This opens the Xbox Game Bar — a recorder
+   that's already built into Windows, nothing to install.
+3. Press **Windows key + Alt + R**. This starts recording — a small timer
+   appears in a corner of the screen.
+4. Now just go through the whole script above, in order, out loud, at a
+   normal pace:
+   **Hook → Search (Dolo 650) → Safety (Thyronorm) → Scan → Cabinet/paywall
+   → Close.**
+   Speak each italicized line as you do the matching step. Don't restart
+   for small stumbles — only restart if something actually breaks (see
+   STEP 4 below). A slightly imperfect take beats five perfect attempts.
+5. When you've said the closing line, press **Windows key + Alt + R**
+   again to stop.
+6. Windows saves it automatically. You'll see a small notification saying
+   the clip was recorded. The file lives in: **This PC → Videos →
+   Captures**.
+
+## STEP 4 — If something looks wrong while recording
+
+- **App shows "Something went wrong" with a Reload button:** click Reload,
+  it recovers in a couple seconds. Keep going — don't restart.
+- **Camera looks black or frozen on the Scan screen:** click Home then
+  Scan again in the app. If it's still black, stop and tell me — don't
   keep recording around it.
-- **Scan takes a while or fails once:** it auto-retries — just wait, or
-  tap capture again once.
-- Send me the raw clip or describe what happened if anything looks broken
-  on playback — I can usually tell you in one message whether it's safe to
-  ignore or worth a quick re-shoot of just that segment.
+- **Scan takes a while or fails once:** it retries automatically — just
+  wait a few seconds, or tap the capture button again once.
+- If you're not sure whether something you saw is a real problem, just
+  send me a message describing it (or the video file) — I'll tell you in
+  one message whether it's fine to ignore or worth re-recording.
+
+## STEP 5 — Editing: you don't have to do any
+
+You do **not** need to trim, cut, or edit anything yourself. A few extra
+seconds of dead air at the start or end is completely fine — judges care
+about the app working, not video-editing polish. You can upload the file
+exactly as Windows saved it.
+
+**If you'd still like it trimmed and don't want to do it by hand**, hand
+it to an AI video tool instead of doing it manually — this takes about 2
+minutes and is not "editing," just clicking one button:
+
+1. Go to **capcut.com** in your browser (free, no install needed) and
+   sign in with Google.
+2. Click **New Project**, then upload your recording (the file from
+   **This PC → Videos → Captures**).
+3. Look for a button called **"Auto Cut"** or **"Remove Silences"** in the
+   toolbar — click it once. This automatically deletes dead air/pauses.
+4. Click **Export** (top right), then **Download**.
+
+That's the entire "editing" step. If you skip it entirely, that's fine too.
+
+## STEP 6 — Upload to YouTube
+
+1. Go to **youtube.com**, make sure you're signed in.
+2. Click the **camera-with-plus icon** in the top right, then **Upload
+   video**.
+3. Pick the recording (either the raw file from Captures, or the CapCut
+   export if you did Step 5).
+4. Set the title to: `SameSalt Demo — RevenueCat Shipaton 2026`
+5. Under visibility, choose **Unlisted** (not Private — judges need to
+   open the link without asking you for access, and not Public unless
+   you're fine with anyone finding it).
+6. Click **Publish**, then copy the video link it gives you.
+
+## STEP 7 — Give it to me
+
+Paste that YouTube link back to me here. I'll drop it into
+`DEVPOST_SUBMISSION.md` in the right place and give you the final
+copy-paste text for the Devpost form — that's the last step before you
+submit.
