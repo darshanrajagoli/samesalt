@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/
+
+# Expo
+.expo/
+dist/
+web-build/
+ios/
+android/
+
+# Expo prebuild
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build artifacts
+*.tsbuildinfo
+
+# Pipeline
+pipeline/data/*.csv
+pipeline/__pycache__/
+pipeline/tests/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Worker
+worker/node_modules/
+worker/.wrangler/
+
+# Database (large binary, built from pipeline)
+# Uncomment if you want to track it in git:
+# assets/samesalt.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cloudflare
+.dev.vars
