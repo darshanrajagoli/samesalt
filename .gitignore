@@ -58,3 +58,6 @@ Thumbs.db
 
 # Cloudflare
 .dev.vars
+
+# Hackathon submission material (videos, form answers with personal details) — kept local
+submission/
