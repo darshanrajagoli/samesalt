@@ -6,7 +6,7 @@ India sells the same molecule under hundreds of brand names. Paracetamol 650 mg 
 
 SameSalt reads the strip, finds every brand with the *exact* same composition (salt, strength, dosage form and release type), then uses **SerpApi** to show what those brands actually cost right now, and where the nearest Jan Aushadhi Kendra is.
 
-**[▶ Watch the 2-minute demo](https://github.com/darshanrajagoli/samesalt/releases/download/v1.1.0/SameSalt-demo.mp4)** · [Download the Android APK](https://github.com/darshanrajagoli/samesalt/releases/latest) · [How SerpApi is used](#how-samesalt-uses-serpapi)
+**[▶ Watch the 2-minute demo](https://youtu.be/t-dWSB5_I50)** · [Download the Android APK](https://github.com/darshanrajagoli/samesalt/releases/latest) · [One-page summary (PDF)](docs/SameSalt-one-page.pdf) · [How SerpApi is used](#how-samesalt-uses-serpapi)
 
 ![SameSalt: search or scan, identical brands, today's prices, Jan Aushadhi nearby, ask for the salt](docs/screens.png)
 
@@ -90,7 +90,7 @@ node test_serp.mjs <recorded google_shopping response.json>
 
 ## Demo
 
-[▶ SameSalt-demo.mp4](https://github.com/darshanrajagoli/samesalt/releases/download/v1.1.0/SameSalt-demo.mp4) (2:22): scanning a Dolo 650 strip, live prices via SerpApi, the Jan Aushadhi finder, the pharmacist card, and the safety check for narrow-therapeutic-index drugs.
+[▶ Watch on YouTube](https://youtu.be/t-dWSB5_I50) (2:22; [MP4 download](https://github.com/darshanrajagoli/samesalt/releases/download/v1.1.0/SameSalt-demo.mp4)): scanning a Dolo 650 strip, live prices via SerpApi, the Jan Aushadhi finder, the pharmacist card, and the safety check for narrow-therapeutic-index drugs.
 
 ## AI tools used
 
