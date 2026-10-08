@@ -1,5 +1,7 @@
 # SameSalt Architecture
 
+> **Live data layer (October 2026):** the Cloudflare Worker also serves `/prices` (SerpApi Google Shopping, India) and `/stores` (SerpApi Google Maps, Jan Aushadhi Kendras), cached in Workers KV. Listings are verified against the composition database in `src/utils/match.ts`. See the [README](../README.md#how-samesalt-uses-serpapi) for details; the diagram below covers the offline core.
+
 ## System Overview
 
 ```

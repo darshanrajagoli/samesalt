@@ -1,44 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { NTI_WARNING } from '../constants/nti';
+import { T } from './ui';
 
 export function NTIWarning() {
   return (
-    <View style={styles.container}>
+    <View style={styles.card}>
       <View style={styles.header}>
-        <Ionicons name="warning" size={24} color={Colors.ntiRed} />
-        <Text style={styles.title}>⚠️ Narrow Therapeutic Index Drug</Text>
+        <Ionicons name="warning" size={20} color={Colors.redDeep} />
+        <T v="headline" color={Colors.redDeep} style={{ marginLeft: 8 }}>
+          Don't switch this brand
+        </T>
       </View>
-      <Text style={styles.message}>{NTI_WARNING}</Text>
+      <T v="subhead" color={Colors.label} style={{ marginTop: 6 }}>
+        {NTI_WARNING}
+      </T>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
+  card: {
+    backgroundColor: Colors.redSoft,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: Colors.ntiRed,
+    marginHorizontal: 16,
+    marginBottom: 28,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.ntiRed,
-  },
-  message: {
-    fontSize: 14,
-    color: '#7F1D1D',
-    lineHeight: 20,
-  },
+  header: { flexDirection: 'row', alignItems: 'center' },
 });

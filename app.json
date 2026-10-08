@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F766E"
+      "resizeMode": "cover",
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -20,17 +20,20 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.samesalt.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "SameSalt needs camera access to scan medicine strips and identify their salt composition."
+        "NSCameraUsageDescription": "SameSalt needs camera access to scan medicine strips and identify their salt composition.",
+        "NSLocationWhenInUseUsageDescription": "SameSalt uses your location to find the nearest Jan Aushadhi Kendras."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F766E"
+        "backgroundColor": "#1A80F2"
       },
       "package": "com.samesalt.app",
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ]
     },
     "plugins": [
@@ -44,10 +47,23 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SameSalt uses your location to find the nearest Jan Aushadhi Kendras."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SameSalt reads medicine names from photos you choose.",
+          "cameraPermission": "SameSalt needs camera access to scan medicine strips."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#0F766E"
+          "color": "#007AFF"
         }
       ],
       [

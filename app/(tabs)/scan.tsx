@@ -1,255 +1,228 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
-import { scanMedicineStrip } from '../../src/utils/scan';
+import { scanMedicineStrip, ScanResult } from '../../src/utils/scan';
 import { searchByName, searchBySalt } from '../../src/utils/db';
+import { Button, T } from '../../src/components/ui';
+
+const FRAME_W = 300;
+const FRAME_H = 190;
 
 export default function ScanScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanning, setScanning] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [read, setRead] = useState<ScanResult | null>(null);
   const cameraRef = useRef<CameraView>(null);
 
-  const handleCapture = async () => {
-    if (!cameraRef.current || scanning) return;
-
-    setScanning(true);
+  async function processImage(base64: string) {
+    setBusy(true);
+    setRead(null);
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        base64: true,
-        quality: 0.7,
-        exif: false,
-      });
+      const scan = await scanMedicineStrip(base64);
+      setRead(scan);
 
-      if (!photo?.base64) {
-        Alert.alert('Error', 'Failed to capture photo');
-        setScanning(false);
-        return;
-      }
-
-      // Send to vision API
-      const scanResult = await scanMedicineStrip(photo.base64);
-
-      // Search local DB for the scanned medicine. A bare brand-name search
-      // (e.g. "Augmentin") can match dozens of different strengths/forms
-      // (tablet vs injection) — so when the model also returned a salt
-      // composition, use it to narrow the candidates before picking a match.
+      // A bare brand search ("Augmentin") can match many strengths and forms,
+      // so when the model also read the salt, use it to narrow candidates.
       let medicines: Awaited<ReturnType<typeof searchByName>> = [];
-      if (scanResult.brand_name) {
-        medicines = await searchByName(scanResult.brand_name, 20);
+      if (scan.brand_name) medicines = await searchByName(scan.brand_name, 20);
+      if (medicines.length === 0 && scan.salt_composition) {
+        medicines = await searchBySalt(scan.salt_composition, 20);
       }
-      if (medicines.length === 0 && scanResult.salt_composition) {
-        medicines = await searchBySalt(scanResult.salt_composition, 20);
-      }
-
-      if (scanResult.salt_composition && medicines.length > 1) {
-        const scannedSaltLower = scanResult.salt_composition.toLowerCase();
-        const firstSaltWord = scannedSaltLower.split(/[\s(),+]+/).filter(Boolean)[0];
+      if (scan.salt_composition && medicines.length > 1) {
+        const firstSaltWord = scan.salt_composition.toLowerCase().split(/[\s(),+]+/).filter(Boolean)[0];
         const narrowed = medicines.filter((m) =>
           (m.salt_composition || '').toLowerCase().includes(firstSaltWord || ' ')
         );
-        if (narrowed.length > 0) {
-          medicines = narrowed;
-        }
+        if (narrowed.length > 0) medicines = narrowed;
       }
 
-      if (medicines.length > 0) {
-        // Navigate to results with the best match. The scanned brand/salt is
-        // passed through so the results screen can show what was detected
-        // vs. what was matched, in case they diverge.
-        const best = medicines[0];
+      if (medicines.length === 0) {
+        Alert.alert(
+          'Not in the database',
+          `Read "${scan.brand_name || scan.salt_composition || 'unknown'}" from the strip, but couldn't match it. Try searching by name.`
+        );
+        setBusy(false);
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      // Let the user see what was read before moving on.
+      setTimeout(() => {
         router.push({
           pathname: '/results',
-          params: {
-            medicineId: best.id.toString(),
-            canonicalKey: best.canonical_key,
-            name: best.name,
-            scannedBrand: scanResult.brand_name || '',
-            scannedSalt: scanResult.salt_composition || '',
-          },
+          params: { medicineId: medicines[0].id.toString(), scannedBrand: scan.brand_name || '' },
         });
-      } else {
-        Alert.alert(
-          'Not Found',
-          `Scanned: ${scanResult.brand_name || scanResult.salt_composition || 'Unknown'}\n\nThis medicine was not found in our database. Try searching manually.`,
-          [{ text: 'OK' }]
-        );
-      }
+        setBusy(false);
+        setRead(null);
+      }, 1100);
     } catch (err: any) {
-      Alert.alert('Scan Failed', err.message || 'Could not scan the strip. Try again or search manually.');
+      Alert.alert('Couldn’t read the strip', err?.message || 'Try again with the name in focus, or search instead.');
+      setBusy(false);
     }
-    setScanning(false);
+  }
+
+  const capture = async () => {
+    if (!cameraRef.current || busy) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7, exif: false });
+    if (photo?.base64) processImage(photo.base64);
+  };
+
+  const pickPhoto = async () => {
+    if (busy) return;
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      base64: true,
+      quality: 0.7,
+    });
+    const asset = res.canceled ? null : res.assets[0];
+    if (asset?.base64) processImage(asset.base64);
   };
 
   if (!permission) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={Colors.teal600} />
-      </View>
-    );
+    return <View style={[styles.black, styles.center]}><ActivityIndicator color={Colors.white} /></View>;
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="camera-outline" size={64} color={Colors.gray300} />
-        <Text style={styles.permTitle}>Camera Access Needed</Text>
-        <Text style={styles.permDesc}>
-          SameSalt needs your camera to scan medicine strips and identify their
-          salt composition.
-        </Text>
-        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Grant Camera Access</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={[styles.permission, styles.center]}>
+        <Ionicons name="camera" size={56} color={Colors.tertiaryLabel} />
+        <T v="title2" align="center" style={{ marginTop: 16 }}>Scan medicine strips</T>
+        <T v="subhead" color={Colors.secondaryLabel} align="center" style={{ marginTop: 8, marginBottom: 24 }}>
+          SameSalt reads the brand and salt printed on the strip. Photos are sent only to read the text
+          and are never stored.
+        </T>
+        <Button title="Allow Camera" onPress={requestPermission} style={{ alignSelf: 'stretch' }} />
+        <Button title="Choose a Photo Instead" kind="plain" onPress={pickPhoto} style={{ marginTop: 6 }} />
+      </SafeAreaView>
     );
   }
 
-  // Tab screens stay mounted in the background in a tab navigator, so
-  // without this the camera (and the physical camera/webcam indicator)
-  // would stay active even after switching to Home or Cabinet.
-  if (!isFocused) {
-    return <View style={styles.container} />;
-  }
+  // Tab screens stay mounted; release the camera when the tab isn't visible.
+  if (!isFocused) return <View style={styles.black} />;
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        facing="back"
-      >
-        {/* Scan overlay */}
-        <View style={styles.overlay}>
-          <View style={styles.overlayTop} />
-          <View style={styles.overlayMiddle}>
-            <View style={styles.overlaySide} />
-            <View style={styles.scanFrame}>
-              {scanning && (
-                <View style={styles.scanningOverlay}>
-                  <ActivityIndicator size="large" color={Colors.white} />
-                  <Text style={styles.scanningText}>Analyzing strip...</Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.overlaySide} />
-          </View>
-          <View style={styles.overlayBottom}>
-            <Text style={styles.instructions}>
-              Position the medicine strip inside the frame
-            </Text>
+    <View style={styles.black}>
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
 
-            <TouchableOpacity
-              style={[styles.captureBtn, scanning && styles.captureBtnDisabled]}
-              onPress={handleCapture}
-              disabled={scanning}
-            >
-              <View style={styles.captureBtnInner}>
-                {scanning ? (
-                  <ActivityIndicator color={Colors.teal700} />
-                ) : (
-                  <Ionicons name="scan" size={32} color={Colors.teal700} />
-                )}
-              </View>
-            </TouchableOpacity>
+      <SafeAreaView style={styles.overlay} edges={['top']}>
+        <View style={styles.hintPill}>
+          <T v="footnote" weight="medium" color={Colors.white}>
+            {busy ? (read ? 'Matching…' : 'Reading the strip…') : 'Fit the name on the strip in the frame'}
+          </T>
+        </View>
 
-            <Text style={styles.hint}>
-              Uses AI to read salt composition from the strip
-            </Text>
+        <View style={styles.frameWrap}>
+          <View style={styles.frame}>
+            <Corner style={{ top: 0, left: 0 }} rotate="0deg" />
+            <Corner style={{ top: 0, right: 0 }} rotate="90deg" />
+            <Corner style={{ bottom: 0, right: 0 }} rotate="180deg" />
+            <Corner style={{ bottom: 0, left: 0 }} rotate="270deg" />
+            {busy && !read ? <ActivityIndicator color={Colors.white} size="large" /> : null}
           </View>
         </View>
-      </CameraView>
+
+        {read ? (
+          <View style={styles.readCard}>
+            <Ionicons name="checkmark-circle" size={22} color={Colors.green} />
+            <View style={{ marginLeft: 10, flex: 1 }}>
+              <T v="headline" numberOfLines={1}>{read.brand_name || 'Medicine found'}</T>
+              <T v="footnote" color={Colors.secondaryLabel} numberOfLines={1}>
+                {read.salt_composition || ''}
+              </T>
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.controls}>
+          <Pressable onPress={pickPhoto} style={styles.sideBtn} hitSlop={10} accessibilityLabel="Choose photo" accessibilityRole="button">
+            <Ionicons name="images" size={24} color={Colors.white} />
+          </Pressable>
+          <Pressable
+            onPress={capture}
+            disabled={busy}
+            accessibilityLabel="Take photo"
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.shutter, (pressed || busy) && { opacity: 0.6 }]}
+          >
+            <View style={styles.shutterInner} />
+          </Pressable>
+          <View style={styles.sideBtn} />
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
 
+function Corner({ style, rotate }: { style: object; rotate: string }) {
+  return <View style={[styles.corner, style, { transform: [{ rotate }] }]} />;
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.black },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    backgroundColor: Colors.background,
-    gap: 16,
-  },
-  camera: { flex: 1 },
-  overlay: { flex: 1 },
-  overlayTop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  overlayMiddle: { flexDirection: 'row', height: 200 },
-  overlaySide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  scanFrame: {
-    width: 300,
-    height: 200,
-    borderWidth: 2,
-    borderColor: Colors.teal400,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  scanningOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  scanningText: { color: Colors.white, fontSize: 14, fontWeight: '600' },
-  overlayBottom: {
-    flex: 1.5,
+  black: { flex: 1, backgroundColor: Colors.black },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  permission: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 32 },
+  overlay: { flex: 1, justifyContent: 'space-between' },
+  hintPill: {
+    alignSelf: 'center',
+    marginTop: 14,
     backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  frameWrap: { alignItems: 'center' },
+  frame: { width: FRAME_W, height: FRAME_H, alignItems: 'center', justifyContent: 'center' },
+  corner: {
+    position: 'absolute',
+    width: 34,
+    height: 34,
+    borderColor: Colors.white,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
+    borderTopLeftRadius: 14,
+  },
+  readCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 24,
-    gap: 16,
-  },
-  instructions: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  captureBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureBtnDisabled: { opacity: 0.5 },
-  captureBtnInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  hint: { color: 'rgba(255,255,255,0.5)', fontSize: 12 },
-  permTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  permDesc: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  permBtn: {
-    backgroundColor: Colors.teal700,
-    borderRadius: 12,
-    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    marginHorizontal: 24,
+    borderRadius: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    marginTop: 8,
   },
-  permBtnText: { color: Colors.white, fontSize: 16, fontWeight: '600' },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingTop: 22,
+    paddingBottom: 28,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  sideBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  shutter: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 4,
+    borderColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutterInner: { width: 62, height: 62, borderRadius: 31, backgroundColor: Colors.white },
 });

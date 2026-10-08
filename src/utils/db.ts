@@ -144,6 +144,22 @@ export async function countAlternatives(canonicalKey: string): Promise<number> {
 }
 
 /**
+ * Every brand sharing a canonical key — the reference list live shopping
+ * listings are verified against. Only the columns matching needs.
+ */
+export async function brandsWithKey(
+  canonicalKey: string
+): Promise<Pick<Medicine, 'id' | 'name' | 'pack_size' | 'manufacturer'>[]> {
+  if (!canonicalKey) return [];
+  const database = await openDatabase();
+  return database.getAllAsync(
+    `SELECT id, name, pack_size, manufacturer FROM medicines
+     WHERE canonical_key = ? AND composition_incomplete = 0`,
+    [canonicalKey]
+  );
+}
+
+/**
  * Get a single medicine by ID.
  */
 export async function getMedicineById(id: number): Promise<Medicine | null> {

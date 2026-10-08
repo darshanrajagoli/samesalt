@@ -1,17 +1,9 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Linking, ScrollView, StyleSheet } from 'react-native';
 import { Colors } from '../src/constants/colors';
 import { useRevenueCat } from '../src/context/RevenueCatContext';
 import { Config } from '../src/constants/config';
+import { Glyph, Row, Section, T } from '../src/components/ui';
 
 export default function SettingsScreen() {
   const { isPro, restorePurchases, customerInfo } = useRevenueCat();
@@ -30,196 +22,71 @@ export default function SettingsScreen() {
     if (customerInfo?.managementURL) {
       Linking.openURL(customerInfo.managementURL);
     } else {
-      Alert.alert(
-        'Manage Subscription',
-        'Go to your device Settings → Subscriptions to manage your SameSalt subscription.'
-      );
+      Alert.alert('Manage Subscription', 'Go to your device Settings → Subscriptions.');
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Subscription status */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subscription</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Status</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                isPro ? styles.proBadge : styles.freeBadge,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  isPro ? styles.proText : styles.freeText,
-                ]}
-              >
-                {isPro ? 'Family' : 'Free'}
-              </Text>
-            </View>
-          </View>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <Section header="How it works">
+        <Row
+          leading={<Glyph name="flask" color={Colors.tint} />}
+          title="Exact composition match"
+          subtitle="246,068 Indian medicines keyed by salt, strength, dosage form and release type. Two brands match only if all four are identical."
+          numberOfLines={2}
+        />
+        <Row
+          leading={<Glyph name="pricetags" color={Colors.green} />}
+          title="Live prices"
+          subtitle="Today's prices at Indian online pharmacies, via SerpApi's Google Shopping API. Every listing is checked against the composition database before it's shown."
+        />
+        <Row
+          leading={<Glyph name="location" color={Colors.orange} />}
+          title="Government generics nearby"
+          subtitle="Nearest Jan Aushadhi Kendras, via SerpApi's Google Maps API."
+        />
+        <Row
+          leading={<Glyph name="shield-checkmark" color={Colors.red} />}
+          title="Safety first"
+          subtitle="For narrow-therapeutic-index drugs (warfarin, thyroxine, lithium…) SameSalt refuses to suggest substitutes."
+          last
+        />
+      </Section>
 
-          {isPro && (
-            <TouchableOpacity
-              style={styles.manageBtn}
-              onPress={handleManageSubscription}
-            >
-              <Text style={styles.manageBtnText}>Manage Subscription</Text>
-              <Ionicons
-                name="open-outline"
-                size={16}
-                color={Colors.teal600}
-              />
-            </TouchableOpacity>
-          )}
+      <Section header="Subscription">
+        <Row title="Plan" value={isPro ? 'Family' : 'Free'} last={!isPro && false} />
+        {isPro ? <Row title="Manage Subscription" chevron onPress={handleManageSubscription} /> : null}
+        <Row title={<T v="body" color={Colors.tint}>Restore Purchases</T>} onPress={handleRestore} last />
+      </Section>
 
-          <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore}>
-            <Text style={styles.restoreText}>Restore Purchases</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* About */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Database</Text>
-            <Text style={styles.value}>{Config.DATASET_DATE}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Version</Text>
-            <Text style={styles.value}>1.0.0</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Data attribution — required by the dataset's CC BY-SA 4.0 license */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data Attribution</Text>
-        <View style={styles.card}>
-          <Text style={styles.disclaimer}>
-            Medicine data is adapted from "A-Z Medicine Dataset of India" by
-            Shudhanshu Singh, licensed under CC BY-SA 4.0. Salt names,
-            strengths, and dosage forms have been normalized and re-keyed for
-            matching; prices and manufacturer names are shown as published.
-          </Text>
-          <TouchableOpacity
-            onPress={() =>
-              Linking.openURL(
-                'https://www.kaggle.com/datasets/shudhanshusingh/az-medicine-dataset-of-india'
-              )
-            }
-          >
-            <Text style={[styles.disclaimer, styles.link]}>
-              View dataset on Kaggle →
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Disclaimer */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Disclaimer</Text>
-        <View style={styles.card}>
-          <Text style={styles.disclaimer}>
-            SameSalt is an informational tool and does not provide medical
-            advice. Medicine prices shown are from {Config.DATASET_DATE} and may
-            not reflect current market prices. Always consult your doctor or
-            pharmacist before switching medicine brands, especially for Narrow
-            Therapeutic Index (NTI) drugs.
-          </Text>
-        </View>
-      </View>
-
-      {/* Open source */}
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.card}
+      <Section
+        header="Data"
+        footer={`Medicine data adapted from "A-Z Medicine Dataset of India" by Shudhanshu Singh (CC BY-SA 4.0); printed prices as of ${Config.DATASET_DATE}. Live prices and store listings come from Google via SerpApi and may change.`}
+      >
+        <Row
+          title="Dataset on Kaggle"
+          chevron
           onPress={() =>
-            Linking.openURL('https://github.com/darshanrajagoli/samesalt')
+            Linking.openURL('https://www.kaggle.com/datasets/shudhanshusingh/az-medicine-dataset-of-india')
           }
-        >
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <Ionicons name="logo-github" size={22} color={Colors.textPrimary} />
-              <Text style={styles.label}>View Source Code</Text>
-            </View>
-            <Ionicons
-              name="open-outline"
-              size={16}
-              color={Colors.textMuted}
-            />
-          </View>
-        </TouchableOpacity>
-      </View>
+        />
+        <Row
+          title="Source Code"
+          chevron
+          onPress={() => Linking.openURL('https://github.com/darshanrajagoli/samesalt')}
+          last
+        />
+      </Section>
+
+      <T v="footnote" color={Colors.secondaryLabel} align="center" style={{ marginHorizontal: 32 }}>
+        SameSalt is informational and not medical advice. Ask your doctor or pharmacist before switching
+        brands.
+      </T>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: 16, paddingBottom: 60 },
-  section: { marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    paddingHorizontal: 4,
-  },
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  label: { fontSize: 15, color: Colors.textPrimary },
-  value: { fontSize: 14, color: Colors.textSecondary },
-  statusBadge: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
-  proBadge: { backgroundColor: Colors.teal100 },
-  freeBadge: { backgroundColor: Colors.gray100 },
-  statusText: { fontSize: 13, fontWeight: '700' },
-  proText: { color: Colors.teal700 },
-  freeText: { color: Colors.textSecondary },
-  manageBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  manageBtnText: { fontSize: 14, color: Colors.teal600, fontWeight: '600' },
-  restoreBtn: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    marginTop: 4,
-  },
-  restoreText: { fontSize: 14, color: Colors.textMuted },
-  disclaimer: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  link: {
-    color: Colors.teal600,
-    fontWeight: '600',
-    marginTop: 8,
-  },
+  screen: { flex: 1, backgroundColor: Colors.background },
+  content: { paddingTop: 12, paddingBottom: 48 },
 });

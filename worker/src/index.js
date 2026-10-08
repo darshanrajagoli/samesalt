@@ -4,9 +4,16 @@
  * Proxies medicine strip photos to OpenRouter's vision API.
  * Keeps the API key server-side so it never ships in the app bundle.
  *
- * POST /scan  { image: "base64..." }
+ * POST /scan    { image: "base64..." }
  * → { brand_name, salt_composition, strength, dosage_form, pack_size }
+ *
+ * POST /prices  { queries: ["dolo 650 tablet", "paracetamol 650 mg tablet"] }
+ * → live Indian pharmacy prices per query (SerpApi google_shopping)
+ *
+ * POST /stores  { lat, lng }
+ * → nearest Jan Aushadhi Kendras (SerpApi google_maps)
  */
+import { livePrices, nearbyStores } from "./serp.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -67,6 +74,12 @@ export default {
 
     if (url.pathname === "/scan") {
       return handleScan(request, env);
+    }
+    if (url.pathname === "/prices") {
+      return guarded(request, env, handlePrices);
+    }
+    if (url.pathname === "/stores") {
+      return guarded(request, env, handleStores);
     }
 
     return jsonResponse({ error: "Not found" }, 404);
@@ -217,6 +230,56 @@ async function handleScan(request, env) {
     console.error("Scan error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);
   }
+}
+
+/** Shared secret + rate limit, same rules as /scan. */
+async function guarded(request, env, handler) {
+  if (!env.APP_SHARED_SECRET || !env.SERPAPI_API_KEY || !env.PRICE_CACHE) {
+    return jsonResponse({ error: "Server misconfigured" }, 500);
+  }
+  if (request.headers.get("X-App-Secret") !== env.APP_SHARED_SECRET) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if (isRateLimited(ip)) {
+    return jsonResponse({ error: "Too many requests, try again in a minute" }, 429);
+  }
+  try {
+    const body = await request.json();
+    return await handler(body, env);
+  } catch (err) {
+    console.error(err);
+    return jsonResponse({ error: String(err.message || err) }, 502);
+  }
+}
+
+const MAX_QUERIES = 3;
+
+async function handlePrices(body, env) {
+  const queries = Array.isArray(body.queries) ? body.queries : [];
+  const clean = [...new Set(queries.map((q) => String(q).trim()).filter(Boolean))];
+  if (clean.length === 0 || clean.length > MAX_QUERIES || clean.some((q) => q.length > 120)) {
+    return jsonResponse({ error: "Send 1-3 queries of at most 120 characters" }, 400);
+  }
+  // One query failing (e.g. no results) shouldn't sink the others.
+  const settled = await Promise.allSettled(clean.map((q) => livePrices(env, q)));
+  const results = clean.map((q, i) =>
+    settled[i].status === "fulfilled"
+      ? { query: q, ok: true, ...settled[i].value }
+      : { query: q, ok: false, error: String(settled[i].reason?.message || settled[i].reason) }
+  );
+  return jsonResponse({ success: true, results });
+}
+
+async function handleStores(body, env) {
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  // India's bounding box, roughly — this is a Jan Aushadhi lookup.
+  if (!(lat > 6 && lat < 37.5 && lng > 68 && lng < 97.5)) {
+    return jsonResponse({ error: "Location must be in India" }, 400);
+  }
+  const out = await nearbyStores(env, lat, lng);
+  return jsonResponse({ success: true, ...out, data: out.data.slice(0, 8) });
 }
 
 function jsonResponse(data, status = 200) {

@@ -4,3 +4,9 @@ compatibility_date = "2024-09-25"
 
 # The OPENROUTER_API_KEY secret is set via:
 #   npx wrangler secret put OPENROUTER_API_KEY
+
+# Live price + store lookups (SerpApi) are cached here; see src/serp.js.
+# SERPAPI_API_KEY is a secret: npx wrangler secret put SERPAPI_API_KEY
+[[kv_namespaces]]
+binding = "PRICE_CACHE"
+id = "7978cdbbd7744ec6b3cd1882b58de1cb"

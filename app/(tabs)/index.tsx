@@ -1,15 +1,14 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
@@ -17,7 +16,9 @@ import { useDatabase } from '../../src/context/DatabaseContext';
 import { useCabinet } from '../../src/context/CabinetContext';
 import { searchByName, Medicine } from '../../src/utils/db';
 import { formatPrice } from '../../src/utils/formatting';
-import { Config } from '../../src/constants/config';
+import { Fonts, Glyph, Row, Section, T } from '../../src/components/ui';
+
+const EXAMPLES = ['Dolo 650 Tablet', 'PAN 40 Tablet', 'Augmentin 625 Duo Tablet', 'Telma 40 Tablet'];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,10 +33,8 @@ export default function HomeScreen() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestSeq = useRef(0);
 
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
   }, []);
 
   const runSearch = useCallback(async (text: string) => {
@@ -43,8 +42,7 @@ export default function HomeScreen() {
     setSearching(true);
     try {
       const hits = await searchByName(text.trim());
-      // A newer keystroke may have started a query that resolved first —
-      // ignore this response if it's no longer the latest one in flight.
+      // A newer keystroke may have started a query that resolved first.
       if (mySeq !== requestSeq.current) return;
       setResults(hits);
       setHasSearched(true);
@@ -58,7 +56,6 @@ export default function HomeScreen() {
     (text: string) => {
       setQuery(text);
       if (debounceRef.current) clearTimeout(debounceRef.current);
-
       if (text.trim().length < 2) {
         requestSeq.current++; // invalidate any in-flight search
         setResults([]);
@@ -66,275 +63,197 @@ export default function HomeScreen() {
         setSearching(false);
         return;
       }
-
-      debounceRef.current = setTimeout(() => {
-        runSearch(text);
-      }, 250);
+      debounceRef.current = setTimeout(() => runSearch(text), 250);
     },
     [runSearch]
   );
 
-  const handleSelectMedicine = useCallback(
-    (medicine: Medicine) => {
-      router.push({
-        pathname: '/results',
-        params: {
-          medicineId: medicine.id.toString(),
-          canonicalKey: medicine.canonical_key,
-          name: medicine.name,
-        },
-      });
+  const open = useCallback(
+    (m: Medicine) => {
+      Keyboard.dismiss();
+      router.push({ pathname: '/results', params: { medicineId: m.id.toString() } });
     },
     [router]
   );
 
+  const openExample = useCallback(
+    async (name: string) => {
+      const [hit] = await searchByName(name, 1);
+      if (hit) open(hit);
+    },
+    [open]
+  );
+
   if (error) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="alert-circle" size={48} color={Colors.error} />
-        <Text style={styles.errorText}>Failed to load medicine database</Text>
-        <Text style={styles.errorDetail}>{error}</Text>
-      </View>
+      <SafeAreaView style={[styles.screen, styles.center]}>
+        <T v="headline">Couldn't open the medicine database</T>
+        <T v="footnote" color={Colors.secondaryLabel} style={{ marginTop: 6 }}>{error}</T>
+      </SafeAreaView>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {/* Hero section */}
-      <View style={styles.hero}>
-        <Text style={styles.heroTitle}>💊 SameSalt</Text>
-        <Text style={styles.heroSubtitle}>
-          Find cheaper medicines with the exact same salt
-        </Text>
+    <SafeAreaView style={styles.screen} edges={['top']}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={styles.titleBlock}>
+          <T v="largeTitle">SameSalt</T>
+          <T v="subhead" color={Colors.secondaryLabel} style={{ marginTop: 2 }}>
+            The same medicine, for less.
+          </T>
+        </View>
 
-        {totalSavings > 0 && (
-          <View style={styles.savingsChip}>
-            <Ionicons name="trending-down" size={16} color={Colors.success} />
-            <Text style={styles.savingsChipText}>
-              {formatPrice(totalSavings)}/month saved
-            </Text>
+        <View style={styles.searchField}>
+          <Ionicons name="search" size={17} color={Colors.secondaryLabel} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Medicine name"
+            placeholderTextColor={Colors.secondaryLabel}
+            value={query}
+            onChangeText={handleSearch}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            editable={isReady}
+          />
+          {query.length > 0 ? (
+            <Pressable onPress={() => handleSearch('')} hitSlop={10}>
+              <Ionicons name="close-circle" size={17} color={Colors.tertiaryLabel} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {!isReady ? (
+          <View style={styles.loading}>
+            <ActivityIndicator color={Colors.secondaryLabel} />
+            <T v="footnote" color={Colors.secondaryLabel} style={{ marginTop: 8 }}>
+              Preparing 246,068 medicines…
+            </T>
           </View>
-        )}
-      </View>
-
-      {/* Search bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search"
-          size={20}
-          color={Colors.gray400}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by medicine name..."
-          placeholderTextColor={Colors.gray400}
-          value={query}
-          onChangeText={handleSearch}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          editable={isReady}
-        />
-        {query.length > 0 && (
-          <TouchableOpacity
-            onPress={() => handleSearch('')}
-            hitSlop={8}
-          >
-            <Ionicons name="close-circle" size={20} color={Colors.gray400} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {!isReady && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.teal600} />
-          <Text style={styles.loadingText}>Loading medicine database...</Text>
-        </View>
-      )}
-
-      {/* Quick actions (when not searching) */}
-      {!hasSearched && isReady && (
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/(tabs)/scan')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: Colors.teal100 }]}>
-              <Ionicons name="camera" size={28} color={Colors.teal700} />
+        ) : searching && !hasSearched ? (
+          <ActivityIndicator color={Colors.secondaryLabel} style={{ marginTop: 24 }} />
+        ) : hasSearched ? (
+          results.length === 0 ? (
+            <View style={styles.empty}>
+              <T v="title3">No Results</T>
+              <T v="subhead" color={Colors.secondaryLabel} align="center" style={{ marginTop: 6 }}>
+                Check the spelling, or scan the strip instead.
+              </T>
             </View>
-            <Text style={styles.actionTitle}>Scan Strip</Text>
-            <Text style={styles.actionDesc}>
-              Point camera at any medicine strip
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/settings')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: Colors.amber100 }]}>
-              <Ionicons name="information-circle" size={28} color={Colors.amber600} />
-            </View>
-            <Text style={styles.actionTitle}>About</Text>
-            <Text style={styles.actionDesc}>
-              How SameSalt works
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Search results */}
-      {searching && (
-        <ActivityIndicator
-          style={styles.spinner}
-          size="small"
-          color={Colors.teal600}
-        />
-      )}
-
-      {hasSearched && !searching && (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.resultsList}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={40} color={Colors.gray300} />
-              <Text style={styles.emptyText}>No medicines found</Text>
-              <Text style={styles.emptyHint}>
-                Try a different spelling or use the camera scan
-              </Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.resultItem}
-              onPress={() => handleSelectMedicine(item)}
-            >
-              <View style={styles.resultInfo}>
-                <Text style={styles.resultName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.resultSalt} numberOfLines={1}>
-                  {item.salt_composition || 'No composition data'}
-                </Text>
-              </View>
-              <View style={styles.resultPrice}>
-                <Text style={styles.resultPriceText}>
-                  {formatPrice(item.price)}
-                </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={Colors.gray400}
+          ) : (
+            <Section>
+              {results.map((m, i) => (
+                <Row
+                  key={m.id}
+                  title={m.name}
+                  subtitle={m.salt_composition || 'Composition not listed'}
+                  value={formatPrice(m.price)}
+                  chevron
+                  onPress={() => open(m)}
+                  last={i === results.length - 1}
                 />
+              ))}
+            </Section>
+          )
+        ) : (
+          <>
+            <Pressable onPress={() => router.push('/(tabs)/scan')} style={({ pressed }) => [styles.scanCard, pressed && { opacity: 0.85 }]}>
+              <View style={{ flex: 1 }}>
+                <T v="title3" color={Colors.white}>Scan a strip</T>
+                <T v="subhead" color="rgba(255,255,255,0.85)" style={{ marginTop: 4 }}>
+                  Point the camera at any medicine. See every brand with the identical salt, and what it
+                  costs today.
+                </T>
               </View>
-            </TouchableOpacity>
-          )}
-        />
-      )}
+              <View style={styles.scanIcon}>
+                <Ionicons name="scan" size={30} color={Colors.tint} />
+              </View>
+            </Pressable>
 
-      {/* Dataset date */}
-      <Text style={styles.datasetDate}>
-        Database: {Config.DATASET_DATE}
-      </Text>
-    </KeyboardAvoidingView>
+            {totalSavings > 0 ? (
+              <Section header="Your savings">
+                <Row
+                  leading={<Glyph name="arrow-down" color={Colors.green} />}
+                  title="By switching brands"
+                  value={`${formatPrice(totalSavings)}/mo`}
+                  valueColor={Colors.greenDeep}
+                  last
+                />
+              </Section>
+            ) : null}
+
+            <Section header="Try one">
+              {EXAMPLES.map((name, i) => (
+                <Row
+                  key={name}
+                  title={name.replace(/\s+Tablet$/, '')}
+                  chevron
+                  onPress={() => openExample(name)}
+                  last={i === EXAMPLES.length - 1}
+                />
+              ))}
+            </Section>
+
+            <Section>
+              <Row
+                leading={<Glyph name="information" color={Colors.secondaryLabel} />}
+                title="How SameSalt works"
+                chevron
+                onPress={() => router.push('/settings')}
+                last
+              />
+            </Section>
+
+            <T v="footnote" color={Colors.secondaryLabel} align="center" style={{ marginHorizontal: 32 }}>
+              246,068 Indian medicines, matched by exact composition. Search works offline.
+            </T>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { fontSize: 16, fontWeight: '600', color: Colors.error, marginTop: 12 },
-  errorDetail: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  hero: { padding: 20, paddingTop: 12, paddingBottom: 4 },
-  heroTitle: { fontSize: 28, fontWeight: '800', color: Colors.teal800 },
-  heroSubtitle: { fontSize: 15, color: Colors.textSecondary, marginTop: 4 },
-  savingsChip: {
+  screen: { flex: 1, backgroundColor: Colors.background },
+  center: { alignItems: 'center', justifyContent: 'center', padding: 24 },
+  titleBlock: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 },
+  searchField: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#DCFCE7',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 10,
+    backgroundColor: Colors.fill,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 10,
+    paddingHorizontal: 9,
+    height: 38,
     gap: 6,
   },
-  savingsChipText: { fontSize: 13, fontWeight: '600', color: Colors.success },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    margin: 16,
-    marginTop: 12,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    height: 48,
-  },
-  searchIcon: { marginRight: 10 },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: Colors.textPrimary,
-    height: '100%',
+    fontFamily: Fonts.regular,
+    fontSize: 17,
+    color: Colors.label,
+    paddingVertical: 0,
   },
-  loadingContainer: { alignItems: 'center', marginTop: 40, gap: 12 },
-  loadingText: { fontSize: 14, color: Colors.textSecondary },
-  quickActions: {
+  loading: { alignItems: 'center', marginTop: 40 },
+  empty: { alignItems: 'center', marginTop: 56, paddingHorizontal: 40 },
+  scanCard: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginTop: 8,
+    alignItems: 'center',
+    backgroundColor: Colors.tint,
+    marginHorizontal: 16,
+    marginBottom: 28,
+    borderRadius: 16,
+    padding: 18,
+    gap: 14,
   },
-  actionCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
+  scanIcon: {
+    width: 56,
+    height: 56,
     borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-  },
-  actionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  actionDesc: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
-  spinner: { marginTop: 20 },
-  resultsList: { paddingHorizontal: 16, paddingBottom: 100 },
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  resultInfo: { flex: 1 },
-  resultName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  resultSalt: { fontSize: 12, color: Colors.textSecondary, marginTop: 3 },
-  resultPrice: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  resultPriceText: { fontSize: 14, fontWeight: '600', color: Colors.teal700 },
-  emptyState: { alignItems: 'center', marginTop: 40, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary },
-  emptyHint: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
-  datasetDate: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    paddingBottom: 8,
   },
 });

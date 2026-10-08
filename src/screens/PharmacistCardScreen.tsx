@@ -1,153 +1,96 @@
 import React from 'react';
-import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
-import { Config } from '../constants/config';
+import { T } from '../components/ui';
+import { formatDosageForm } from '../utils/formatting';
 
+/** Full-screen card to hand to the pharmacist: the salt, not the brand. */
 export function PharmacistCardScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    salt: string;
-    strength: string;
-    form: string;
-    brand: string;
-  }>();
+  const params = useLocalSearchParams<{ salt: string; strength: string; form: string; brand: string }>();
+  const salts = (params.salt || 'Unknown composition').split(/\s*\+\s*/);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.teal800} />
-
-      <TouchableOpacity
-        style={styles.closeBtn}
-        onPress={() => router.back()}
-        hitSlop={16}
-      >
-        <Ionicons name="close-circle" size={36} color="rgba(255,255,255,0.7)" />
-      </TouchableOpacity>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>SHOW THIS TO YOUR PHARMACIST</Text>
-
-        <View style={styles.divider} />
-
-        <Text style={styles.heading}>I need a medicine with:</Text>
-
-        <Text style={styles.saltName}>{params.salt || 'Unknown salt'}</Text>
-
-        {params.strength ? (
-          <Text style={styles.strength}>{params.strength}</Text>
-        ) : null}
-
-        {params.form ? (
-          <Text style={styles.form}>{params.form}</Text>
-        ) : null}
-
-        <View style={styles.divider} />
-
-        <Text style={styles.instruction}>
-          Any brand with this exact composition will work.
-          {'\n'}Please give me the most affordable option.
-        </Text>
-
-        {params.brand ? (
-          <Text style={styles.originalBrand}>
-            Original brand: {params.brand}
-          </Text>
-        ) : null}
+    <SafeAreaView style={styles.screen}>
+      <StatusBar style="dark" />
+      <View style={styles.topBar}>
+        <T v="footnote" weight="semibold" color={Colors.secondaryLabel}>
+          SHOW TO THE PHARMACIST
+        </T>
+        <Pressable onPress={() => router.back()} hitSlop={14} style={styles.close}>
+          <Ionicons name="close" size={18} color={Colors.secondaryLabel} />
+        </Pressable>
       </View>
 
-      <Text style={styles.disclaimer}>
-        Prices from {Config.DATASET_DATE} · SameSalt is not medical advice
-      </Text>
-    </View>
+      <View style={styles.body}>
+        <T v="title3" color={Colors.secondaryLabel}>I need any brand of</T>
+        {salts.map((s) => (
+          <T key={s} style={styles.salt}>
+            {s}
+          </T>
+        ))}
+        {params.form ? (
+          <T v="title2" color={Colors.tint} style={{ marginTop: 8 }}>
+            {formatDosageForm(params.form)}
+          </T>
+        ) : null}
+
+        <View style={styles.rule} />
+
+        <T v="title3">The most affordable one, please.</T>
+        <T v="title3" color={Colors.secondaryLabel} style={{ marginTop: 6 }}>
+          कृपया इसी साल्ट की सबसे सस्ती दवा दें।
+        </T>
+      </View>
+
+      <View style={styles.footer}>
+        {params.brand ? (
+          <T v="footnote" color={Colors.secondaryLabel} align="center">
+            Prescribed as {params.brand}
+          </T>
+        ) : null}
+        <T v="caption" color={Colors.tertiaryLabel} align="center" style={{ marginTop: 4 }}>
+          SameSalt · informational, not medical advice
+        </T>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.teal800,
+  screen: { flex: 1, backgroundColor: Colors.white },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+  close: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.fill,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
   },
-  closeBtn: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 10,
+  body: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 },
+  salt: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 40,
+    lineHeight: 46,
+    letterSpacing: -1.2,
+    color: Colors.label,
+    marginTop: 6,
   },
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 32,
-    width: '100%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 16,
+  rule: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.separator,
+    marginVertical: 28,
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.teal600,
-    letterSpacing: 1.5,
-    textAlign: 'center',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.gray200,
-    width: '100%',
-    marginVertical: 20,
-  },
-  heading: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  saltName: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    lineHeight: 36,
-  },
-  strength: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.teal700,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  form: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    marginTop: 4,
-    textTransform: 'capitalize',
-    textAlign: 'center',
-  },
-  instruction: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  originalBrand: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginTop: 16,
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
-  disclaimer: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
-    marginTop: 20,
-  },
+  footer: { paddingHorizontal: 24, paddingBottom: 20 },
 });

@@ -1,53 +1,73 @@
 /**
- * SameSalt color palette.
- * Teal-anchored — medical trust without clinical coldness.
+ * SameSalt palette — iOS system colors, light appearance.
+ *
+ * One tint (blue) for anything tappable, green only for money saved, red only
+ * for safety. Everything else is the grouped-background grays.
  */
 export const Colors = {
-  // Primary
-  teal50: '#F0FDFA',
-  teal100: '#CCFBF1',
-  teal200: '#99F6E4',
-  teal300: '#5EEAD4',
-  teal400: '#2DD4BF',
-  teal500: '#14B8A6',
-  teal600: '#0D9488',
-  teal700: '#0F766E',
-  teal800: '#115E59',
-  teal900: '#134E4A',
+  // Tint
+  tint: '#007AFF',
+  tintSoft: '#E5F0FF',
 
-  // Accent — warm amber for savings highlights
-  amber50: '#FFFBEB',
-  amber100: '#FEF3C7',
-  amber400: '#FBBF24',
-  amber500: '#F59E0B',
-  amber600: '#D97706',
+  // Meaning
+  green: '#34C759',
+  greenDeep: '#248A3D',
+  greenSoft: '#E8F8EC',
+  red: '#FF3B30',
+  redDeep: '#C4281C',
+  redSoft: '#FFEBEA',
+  orange: '#FF9500',
+  orangeSoft: '#FFF4E5',
 
-  // Semantic
-  success: '#16A34A',
-  warning: '#F59E0B',
-  error: '#DC2626',
-  ntiRed: '#B91C1C',
+  // Surfaces
+  background: '#F2F2F7', // systemGroupedBackground
+  card: '#FFFFFF', // secondarySystemGroupedBackground
+  fill: '#E9E9EE', // search fields, chips
+  separator: '#C6C6C8',
+  hairline: 'rgba(60,60,67,0.18)',
 
-  // Neutrals
+  // Text
+  label: '#000000',
+  secondaryLabel: 'rgba(60,60,67,0.6)',
+  tertiaryLabel: 'rgba(60,60,67,0.3)',
+
   white: '#FFFFFF',
-  gray50: '#F9FAFB',
-  gray100: '#F3F4F6',
-  gray200: '#E5E7EB',
-  gray300: '#D1D5DB',
-  gray400: '#9CA3AF',
-  gray500: '#6B7280',
-  gray600: '#4B5563',
-  gray700: '#374151',
-  gray800: '#1F2937',
-  gray900: '#111827',
   black: '#000000',
 
-  // Specific
-  janAushadhi: '#1D4ED8', // Blue badge for government generics
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  border: '#E5E7EB',
-  textPrimary: '#111827',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
+  // --- Legacy names, mapped onto the system palette so screens that still
+  // reference them render in the new style.
+  teal50: '#F2F2F7',
+  teal100: '#E5F0FF',
+  teal200: '#C7DEFF',
+  teal300: '#99C4FF',
+  teal400: '#5AA5FF',
+  teal500: '#2E8CFF',
+  teal600: '#007AFF',
+  teal700: '#007AFF',
+  teal800: '#000000',
+  teal900: '#000000',
+  amber50: '#FFF4E5',
+  amber100: '#FFF4E5',
+  amber400: '#FF9500',
+  amber500: '#FF9500',
+  amber600: '#C93400',
+  success: '#248A3D',
+  warning: '#FF9500',
+  error: '#FF3B30',
+  ntiRed: '#C4281C',
+  gray50: '#F2F2F7',
+  gray100: '#E9E9EE',
+  gray200: '#D1D1D6',
+  gray300: '#C7C7CC',
+  gray400: '#AEAEB2',
+  gray500: '#8E8E93',
+  gray600: '#636366',
+  gray700: '#48484A',
+  gray800: '#3A3A3C',
+  gray900: '#1C1C1E',
+  janAushadhi: '#007AFF',
+  border: 'rgba(60,60,67,0.18)',
+  textPrimary: '#000000',
+  textSecondary: 'rgba(60,60,67,0.6)',
+  textMuted: 'rgba(60,60,67,0.3)',
 } as const;
