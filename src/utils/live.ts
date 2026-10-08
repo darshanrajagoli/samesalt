@@ -84,6 +84,11 @@ export async function fetchNearbyStores(lat: number, lng: number) {
   return { stores: resp.data, fetchedAt: resp.fetchedAt, stale: resp.source === 'stale' };
 }
 
+/** Fetched within the last hour: worth calling "live". */
+export function isRecent(ts: number | null): boolean {
+  return !!ts && Date.now() - ts < 60 * 60 * 1000;
+}
+
 export function timeAgo(ts: number | null): string {
   if (!ts) return '';
   const min = Math.round((Date.now() - ts) / 60000);

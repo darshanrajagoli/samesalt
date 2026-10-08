@@ -33,31 +33,35 @@ export default function SettingsScreen() {
           leading={<Glyph name="flask" color={Colors.tint} />}
           title="Exact composition match"
           subtitle="246,068 Indian medicines keyed by salt, strength, dosage form and release type. Two brands match only if all four are identical."
-          numberOfLines={2}
+          subtitleLines={0}
         />
         <Row
           leading={<Glyph name="pricetags" color={Colors.green} />}
           title="Live prices"
           subtitle="Today's prices at Indian online pharmacies, via SerpApi's Google Shopping API. Every listing is checked against the composition database before it's shown."
+          subtitleLines={0}
         />
         <Row
           leading={<Glyph name="location" color={Colors.orange} />}
           title="Government generics nearby"
           subtitle="Nearest Jan Aushadhi Kendras, via SerpApi's Google Maps API."
+          subtitleLines={0}
         />
         <Row
           leading={<Glyph name="shield-checkmark" color={Colors.red} />}
           title="Safety first"
           subtitle="For narrow-therapeutic-index drugs (warfarin, thyroxine, lithium…) SameSalt refuses to suggest substitutes."
+          subtitleLines={0}
           last
         />
       </Section>
 
-      <Section header="Subscription">
-        <Row title="Plan" value={isPro ? 'Family' : 'Free'} last={!isPro && false} />
-        {isPro ? <Row title="Manage Subscription" chevron onPress={handleManageSubscription} /> : null}
-        <Row title={<T v="body" color={Colors.tint}>Restore Purchases</T>} onPress={handleRestore} last />
-      </Section>
+      {isPro ? (
+        <Section header="Family plan">
+          <Row title="Manage Subscription" chevron onPress={handleManageSubscription} />
+          <Row title={<T v="body" color={Colors.tint}>Restore Purchases</T>} onPress={handleRestore} last />
+        </Section>
+      ) : null}
 
       <Section
         header="Data"

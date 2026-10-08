@@ -19,6 +19,7 @@ import {
   fetchLivePrices,
   fetchNearbyStores,
   timeAgo,
+  isRecent,
 } from '../src/utils/live';
 import { formatDosageForm, formatPrice } from '../src/utils/formatting';
 import { NTIWarning } from '../src/components/NTIWarning';
@@ -83,7 +84,7 @@ export default function ResultsScreen() {
         setStores({ state: 'error', error: 'Location permission is needed to find stores near you.' });
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos = await locate();
       const out = await fetchNearbyStores(pos.coords.latitude, pos.coords.longitude);
       setStores({ state: 'done', data: out });
     } catch (e: any) {
@@ -161,7 +162,7 @@ export default function ResultsScreen() {
         <Header med={med} scannedBrand={params.scannedBrand} count={null} />
         <NTIWarning />
         <Section footer="SameSalt doesn't suggest substitutes for narrow-therapeutic-index drugs. Keep taking the brand your doctor prescribed.">
-          <Row title={med.name} subtitle={med.salt_composition || undefined} />
+          <Row title={med.name} subtitle={med.salt_composition || undefined} last />
         </Section>
       </ScrollView>
     );
@@ -207,7 +208,11 @@ export default function ResultsScreen() {
 
       <Section
         header={`All ${totalCount} identical brands`}
-        footer={`Printed MRP from ${Config.DATASET_DATE}. Cheapest first.`}
+        footer={
+          alternatives.length < totalCount
+            ? `Printed MRP from ${Config.DATASET_DATE}. The ${alternatives.length} cheapest are listed.`
+            : `Printed MRP from ${Config.DATASET_DATE}. Cheapest first.`
+        }
       >
         {printedRows.map((m, i) => {
           const isYours = m.id === med.id;
@@ -239,7 +244,7 @@ export default function ResultsScreen() {
         })}
         {!showAll && alternatives.length > PRINTED_ROWS ? (
           <Row
-            title={<T v="body" color={Colors.tint}>Show {alternatives.length - PRINTED_ROWS} more</T>}
+            title={<T v="body" color={Colors.tint}>Show {alternatives.length - PRINTED_ROWS} more{alternatives.length < totalCount ? ' of the cheapest' : ''}</T>}
             onPress={() => setShowAll(true)}
             last
           />
@@ -337,8 +342,14 @@ function LiveSection({ live, med, onRetry }: { live: Load<LivePriceReport>; med:
     <>
       <Section
         header="Today's prices online"
-        headerRight={<Pill label={r.stale ? `Cached ${timeAgo(r.fetchedAt)}` : 'Live'} color={r.stale ? Colors.orange : Colors.greenDeep} icon="pulse" />}
-        footer={`${r.offersSeen} listings from ${r.sellers} sellers via Google Shopping · updated ${timeAgo(r.fetchedAt)}`}
+        headerRight={
+          <Pill
+            label={r.stale ? `Cached ${timeAgo(r.fetchedAt)}` : isRecent(r.fetchedAt) ? 'Live' : `Updated ${timeAgo(r.fetchedAt)}`}
+            color={r.stale ? Colors.orange : Colors.greenDeep}
+            icon="pulse"
+          />
+        }
+        footer={`${r.offersSeen} listings from ${r.sellers} sellers via Google Shopping. Prices refresh daily.`}
       >
         {best ? (
           <>
@@ -402,6 +413,29 @@ function LiveSection({ live, med, onRetry }: { live: Load<LivePriceReport>; med:
       ) : null}
     </>
   );
+}
+
+/**
+ * A position good enough for "stores within a few km": a recent cached fix if
+ * there is one, else a network fix, else GPS. Each attempt is time-boxed so a
+ * phone indoors (or without network location) never spins forever.
+ */
+async function locate(): Promise<Location.LocationObject> {
+  const recent = await Location.getLastKnownPositionAsync({ maxAge: 15 * 60 * 1000 }).catch(() => null);
+  if (recent) return recent;
+  const within = <T,>(p: Promise<T>, ms: number) =>
+    Promise.race([p, new Promise<never>((_, no) => setTimeout(() => no(new Error('timeout')), ms))]);
+  try {
+    return await within(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }), 8000);
+  } catch {
+    try {
+      return await within(Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }), 15000);
+    } catch {
+      const any = await Location.getLastKnownPositionAsync().catch(() => null);
+      if (any) return any;
+      throw new Error("Couldn't get your location. Check that location is turned on, then try again.");
+    }
+  }
 }
 
 function StoresSection({

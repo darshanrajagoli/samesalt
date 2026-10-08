@@ -86,6 +86,19 @@ export async function searchByName(
 }
 
 /**
+ * Names starting with `prefix`. Unlike searchByName this can use the NOCASE
+ * name index, so it stays fast when called several times in a row.
+ */
+export async function searchByNamePrefix(prefix: string, limit = 30): Promise<Medicine[]> {
+  const database = await openDatabase();
+  const results = await database.getAllAsync<Medicine>(
+    `SELECT * FROM medicines WHERE name LIKE ? ORDER BY name COLLATE NOCASE LIMIT ?`,
+    [`${prefix.replace(/[%_]/g, '')}%`, limit]
+  );
+  return results.map(normalizeMedicine);
+}
+
+/**
  * Search medicines by salt composition text (fuzzy).
  */
 export async function searchBySalt(

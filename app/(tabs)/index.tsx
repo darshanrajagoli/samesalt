@@ -18,7 +18,7 @@ import { searchByName, Medicine } from '../../src/utils/db';
 import { formatPrice } from '../../src/utils/formatting';
 import { Fonts, Glyph, Row, Section, T } from '../../src/components/ui';
 
-const EXAMPLES = ['Dolo 650 Tablet', 'PAN 40 Tablet', 'Augmentin 625 Duo Tablet', 'Telma 40 Tablet'];
+const EXAMPLES = ['Dolo 650 Tablet', 'PAN 40 Tablet', 'Telma 40 Tablet'];
 
 export default function HomeScreen() {
   const router = useRouter();

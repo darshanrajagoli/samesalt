@@ -9,7 +9,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/colors';
 import { scanMedicineStrip, ScanResult } from '../../src/utils/scan';
-import { searchByName, searchBySalt } from '../../src/utils/db';
+import { resolveScan } from '../../src/utils/resolve';
 import { Button, T } from '../../src/components/ui';
 
 const FRAME_W = 300;
@@ -30,22 +30,8 @@ export default function ScanScreen() {
       const scan = await scanMedicineStrip(base64);
       setRead(scan);
 
-      // A bare brand search ("Augmentin") can match many strengths and forms,
-      // so when the model also read the salt, use it to narrow candidates.
-      let medicines: Awaited<ReturnType<typeof searchByName>> = [];
-      if (scan.brand_name) medicines = await searchByName(scan.brand_name, 20);
-      if (medicines.length === 0 && scan.salt_composition) {
-        medicines = await searchBySalt(scan.salt_composition, 20);
-      }
-      if (scan.salt_composition && medicines.length > 1) {
-        const firstSaltWord = scan.salt_composition.toLowerCase().split(/[\s(),+]+/).filter(Boolean)[0];
-        const narrowed = medicines.filter((m) =>
-          (m.salt_composition || '').toLowerCase().includes(firstSaltWord || ' ')
-        );
-        if (narrowed.length > 0) medicines = narrowed;
-      }
-
-      if (medicines.length === 0) {
+      const medicine = await resolveScan(scan.brand_name, scan.salt_composition);
+      if (!medicine) {
         Alert.alert(
           'Not in the database',
           `Read "${scan.brand_name || scan.salt_composition || 'unknown'}" from the strip, but couldn't match it. Try searching by name.`
@@ -58,7 +44,7 @@ export default function ScanScreen() {
       setTimeout(() => {
         router.push({
           pathname: '/results',
-          params: { medicineId: medicines[0].id.toString(), scannedBrand: scan.brand_name || '' },
+          params: { medicineId: medicine.id.toString(), scannedBrand: scan.brand_name || '' },
         });
         setBusy(false);
         setRead(null);

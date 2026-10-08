@@ -182,6 +182,7 @@ export function Row({
   last,
   titleColor,
   numberOfLines = 1,
+  subtitleLines = 2,
 }: {
   leading?: React.ReactNode;
   title: React.ReactNode;
@@ -194,6 +195,8 @@ export function Row({
   last?: boolean;
   titleColor?: string;
   numberOfLines?: number;
+  /** 0 = no limit. */
+  subtitleLines?: number;
 }) {
   const content = (
     <View style={styles.row}>
@@ -209,7 +212,7 @@ export function Row({
           )}
           {subtitle ? (
             typeof subtitle === 'string' ? (
-              <T v="footnote" color={Colors.secondaryLabel} numberOfLines={2} style={{ marginTop: 2 }}>
+              <T v="footnote" color={Colors.secondaryLabel} numberOfLines={subtitleLines} style={{ marginTop: 2 }}>
                 {subtitle}
               </T>
             ) : (
