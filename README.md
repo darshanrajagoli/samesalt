@@ -6,7 +6,9 @@ India sells the same molecule under hundreds of brand names. Paracetamol 650 mg 
 
 SameSalt reads the strip, finds every brand with the *exact* same composition (salt, strength, dosage form and release type), then uses **SerpApi** to show what those brands actually cost right now, and where the nearest Jan Aushadhi Kendra is.
 
-[Demo video](#demo) · [Download the Android APK](https://github.com/darshanrajagoli/samesalt/releases/latest) · [How SerpApi is used](#how-samesalt-uses-serpapi)
+**[▶ Watch the 2-minute demo](https://github.com/darshanrajagoli/samesalt/releases/download/v1.1.0/SameSalt-demo.mp4)** · [Download the Android APK](https://github.com/darshanrajagoli/samesalt/releases/latest) · [How SerpApi is used](#how-samesalt-uses-serpapi)
+
+![SameSalt: search or scan, identical brands, today's prices, Jan Aushadhi nearby, ask for the salt](docs/screens.png)
 
 ---
 
@@ -88,11 +90,11 @@ node test_serp.mjs <recorded google_shopping response.json>
 
 ## Demo
 
-Demo video: *link added on upload*
+[▶ SameSalt-demo.mp4](https://github.com/darshanrajagoli/samesalt/releases/download/v1.1.0/SameSalt-demo.mp4) (2:22): scanning a Dolo 650 strip, live prices via SerpApi, the Jan Aushadhi finder, the pharmacist card, and the safety check for narrow-therapeutic-index drugs.
 
 ## AI tools used
 
-Built with **Claude Code** (Anthropic) for code, design and the demo video. In the product, a vision model (Google Gemini 2.5 Flash via OpenRouter) reads text from strip photos. All matching, verification and price arithmetic is deterministic code.
+Built with **Claude Code** (Anthropic) for code, design and editing the demo video; the narration is my own voice. In the product, a vision model (Google Gemini 2.5 Flash via OpenRouter) reads text from strip photos. All matching, verification and price arithmetic is deterministic code.
 
 ## License
 
